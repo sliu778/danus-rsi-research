@@ -1,23 +1,42 @@
 # Architecture and persistence
 
-The orchestration layer is an explicit bounded workflow over the existing Danus runtime. It does not launch the upstream indefinite worker loop, modify Danus private worker memory, or directly write its fact graph.
+The orchestration layer is an explicit bounded workflow over the existing Danus runtime. It does not launch the upstream indefinite worker loop, modify Danus private worker memory, or directly write its fact graph. Its one write into a Danus project is an operator-confirmed `danus assign` ([bridge](bridge.md)).
 
 | Component | Responsibility |
 |---|---|
-| `cli.py` | Explicit commands, configuration, state selection, campaign rounds |
-| `engine.py` | Dependencies, concurrent judges, research stages, development cycles, paired audits |
+| `cli.py` | Explicit commands, configuration, state selection, campaign rounds and arm alternation |
+| `engine.py` | Dependencies, concurrent judges, research stages, verifier and solver development cycles, paired audits, mining |
 | `agents.py` | Role prompts, structured responses, subscription transport and scripted fixtures |
 | `transport.py` | Adapted Math Panel isolation, Codex event audit, rubric, native HTTP checks |
-| `protocol.py` | Validation, split checks, deterministic metrics and frozen promotion rule |
-| `store.py` | Transactions, persistent budgets, worker leases, immutable artifacts and lineage |
-| `valency.py` | Scholarly search/import with provenance through Valency MCP |
+| `protocol.py` | Validation, split checks, deterministic metrics, frozen verifier and solver gates, arm field locks |
+| `store.py` | Transactions, persistent budgets, worker leases, immutable artifacts, lineage, shared audit registry |
+| `valency.py` | Scholarly search/import with provenance through Valency MCP; mining eligibility by date and category |
+| `bridge.py` | Danus handoff through `danus assign`; read-only tracing of native verifier outcomes |
 | `report.py` | Escaped HTML/Markdown summaries and local full JSON evidence |
+
+## The loop
+
+```mermaid
+flowchart LR
+  V[Valency records] --> M[Miner] --> Q[Quarantined drafts] --> H[Human review] --> D[Development suite]
+  V --> R[Research round]
+  D --> VA[Verifier arm: labeled candidates]
+  D --> SA[Solver arm: generated solutions]
+  VA -->|branch| P[Development policy]
+  SA -->|branch| P
+  P --> R
+  P -->|fresh private audit| A[Active policy]
+  R -->|panel-supported finding| B[Danus bridge] --> W[Danus workers + native verifier] --> F[Fact graph]
+  F -->|handoff-sync| R
+```
+
+Benchmark growth, verifier quality and solver quality feed each other only through gates: drafts through human review, strategies through paired development gates and fresh audits, findings through the Danus verifier.
 
 ## Scheduling
 
-A research round has a curator, planner, and one to three subproblems. Each subproblem has a researcher, critic, at most one revision, a native verification request and three judge sessions. Subproblems execute in deterministic order; panel sessions run in a bounded thread pool. A development cycle evaluates the current policy, asks an optimizer for one revision, evaluates that revision on the same examples, then selects a branch using the frozen development gate.
+A research round has a curator, planner, and one to three subproblems. Each subproblem has a researcher, critic, at most one revision, a native verification request and three judge sessions. Subproblems execute in deterministic order; panel sessions run in a bounded thread pool. A development cycle evaluates the current policy, asks an optimizer for one revision, evaluates that revision on the same examples, then selects a branch using the frozen development gate. A verifier cycle re-judges fixed labeled candidates; a solver cycle generates fresh attempts and judges them under unchanged verifier guidance. `run --arm alternate` (the demo default) alternates the two arms across rounds, so each round changes only one side.
 
-The campaign passes the status and evidence IDs of prior findings into later planning. A model-supported finding remains a proposal, not an established fact. The reference-free research path explicitly asks judges to check missing dependencies. New task references remain quarantined.
+The campaign passes the status and evidence IDs of prior findings into later planning, together with any Danus facts from the latest `handoff-sync`. A model-supported finding remains a proposal, not an established fact; only a fact in the Danus graph is labeled as verified. The reference-free research path explicitly asks judges to check missing dependencies. New task references remain quarantined.
 
 ## Persistence
 
@@ -25,12 +44,12 @@ SQLite uses WAL and `BEGIN IMMEDIATE` for mutations. Every model/native request 
 
 | Table | Contents |
 |---|---|
-| `artifacts` | Content-addressed policies, datasets, Valency snapshots, papers, findings, drafts and reports |
+| `artifacts` | Content-addressed policies, datasets, Valency snapshots, papers, findings, drafts, Danus handoffs/syncs and reports |
 | `events` | Timestamped event chain linked by SHA-256 |
 | `runs` | Exact manifest, code/data hashes, backend mode, resource limits and status |
 | `jobs` | Request fingerprints, status, attempts, lease token, result |
 | `lineage` | Candidate policy, parent policy and originating run |
-| `audit_batches` / `audit_cases` | One-use reservations and consumed family/statement fingerprints |
+| `audit_batches` / `audit_cases` | One-use reservations and consumed family/statement fingerprints, shared by verifier and solver audits |
 | `evaluations` | Paired outcomes, gate decision, audit hash, regression/code versions |
 | `meta` | Database schema version and current active policy |
 

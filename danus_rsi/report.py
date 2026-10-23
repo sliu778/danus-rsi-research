@@ -14,17 +14,25 @@ def summary(result):
     elif kind == "research":
         for item in result["findings"]:
             lines.append((item["task"]["title"], item["task"]["domain"], item["status"]))
-    elif kind == "rsi":
+    elif kind in ("rsi", "solver-rsi"):
+        arm = "Solver" if kind == "solver-rsi" else "Verifier"
         for item in result["cycles"]:
-            lines.append((f"Development cycle {item['cycle']}", item["candidate"][:12],
-                          "branch selected" if item["selected_for_next_cycle"] == item["candidate"] else "baseline retained"))
+            selected = item["candidate"] is not None and item["selected_for_next_cycle"] == item["candidate"]
+            lines.append((f"{arm} development cycle {item['cycle']}", (item["candidate"] or "no candidate")[:12],
+                          "branch selected" if selected else "baseline retained"))
+    elif kind == "mining":
+        lines.append(("Valency mining", f"{result['papers']} eligible records",
+                      f"{len(result['drafts'])} quarantined draft(s), {len(result['rejected'])} rejected"))
     elif kind == "audit":
-        lines.append(("Fresh audit evaluation", result["evaluation_id"][:12], "promoted" if result["promoted"] else "not promoted"))
+        arm = "Solver" if result.get("arm") == "solver" else "Verifier"
+        lines.append((f"{arm} fresh audit evaluation", result["evaluation_id"][:12], "promoted" if result["promoted"] else "not promoted"))
         lines.extend(("Gate", reason, "requires attention") for reason in result["gate"]["reasons"])
     else:
         for section in result.get("rounds", []):
             lines.extend(summary(section["research"]))
             lines.extend(summary(section["improvement"]))
+        if result.get("mining"):
+            lines.extend(summary(result["mining"]))
     return lines
 
 
@@ -52,6 +60,6 @@ def write_report(store, run_id, result):
 h1{font-family:Georgia,serif;font-weight:normal;font-size:42px}p{line-height:1.6}.notice{border-left:4px solid #f2be69;background:#20303c;padding:18px}
 .meta{color:#a5bccb}table{width:100%;border-collapse:collapse;margin-top:32px}th{text-align:left;color:#a7d7ce}td,th{padding:15px 10px;border-bottom:1px solid #31414d;vertical-align:top;overflow-wrap:anywhere}
 footer{color:#a5bccb;font-size:14px;margin-top:32px}code{overflow-wrap:anywhere}</style><body><p class="meta">DANUS / RESEARCH SYSTEMS</p>
-<h1>Research &amp; verifier development</h1><p class="notice">""" + html.escape(warning) + "</p><p class=\"meta\">Run <code>" + run_id + "</code> · " + str(run["calls"]) + " / " + str(run["budget"]) + " calls reserved</p><table><thead><tr><th>Item</th><th>Domain / version</th><th>Outcome</th></tr></thead><tbody>" + escaped_rows + "</tbody></table><footer>Valency: scholarly records and provenance. SQLite: local experimental state. No claims of autonomous scientific discovery. Full evidence is stored locally; audit cases are omitted from this summary.</footer></body></html>"
+<h1>Research, verifier &amp; solver development</h1><p class="notice">""" + html.escape(warning) + "</p><p class=\"meta\">Run <code>" + run_id + "</code> · " + str(run["calls"]) + " / " + str(run["budget"]) + " calls reserved</p><table><thead><tr><th>Item</th><th>Domain / version</th><th>Outcome</th></tr></thead><tbody>" + escaped_rows + "</tbody></table><footer>Valency: scholarly records and provenance. SQLite: local experimental state. No claims of autonomous scientific discovery. Full evidence is stored locally; audit cases are omitted from this summary.</footer></body></html>"
     (folder / "report.html").write_text(content, encoding="utf-8")
     return {"artifact": artifact, "report": str(folder / "report.html"), "json": str(folder / "report.json")}

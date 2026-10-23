@@ -2,7 +2,14 @@
 
 ## Scope and trust boundary
 
-Let a policy $\pi_t$ consist of a solver strategy, verifier guidance, and a curriculum focus. The optimizer in this release may change only verifier guidance, its name, and its explanatory rationale. Solver strategy and curriculum focus are held fixed because the experiment measures verification of fixed candidates, not generated solution quality. New benchmark problems are separate unreviewed drafts.
+Let a policy $\pi_t$ consist of a solver strategy, verifier guidance, and a curriculum focus. Two improvement arms revise it, never in the same experiment:
+
+| Arm | May change | Held fixed | Measured on |
+|---|---|---|---|
+| Verifier | verifier guidance, name, rationale | solver strategy, curriculum | labeled fixed candidates (balanced accuracy) |
+| Solver | solver strategy, name, rationale | verifier guidance, curriculum | generated solutions judged by the strict panel (strict-accept count) |
+
+Each arm holds the other side fixed so that a score change has one cause. In particular, a solver strategy can never raise its own score by loosening the check it is judged by; code rejects any proposal that touches a frozen field. Curriculum focus is not optimized in this release. New benchmark problems are separate unreviewed drafts.
 
 The sequence is
 
@@ -88,6 +95,40 @@ Audits reject declared family overlap and whitespace/case-normalized statement o
 
 Audit labels/results are stored only in ignored local state and are never supplied to the optimizer. The HTML/Markdown report omits case content; full JSON remains private. The repository contains no real private audit set.
 
+## Solver arm
+
+A solver development cycle selects development problems, generates one candidate per problem under the current branch, judges each with the same panel and native check as the benchmark, and asks the solver optimizer for revised solver guidance. The optimizer sees problem statements, the decisions, the reviewers' stated defects and the solve counts. It never sees references. A proposal is rejected without evaluation, and the branch is unchanged, if it changes a frozen field, leaves the solver guidance unchanged, or quotes a development prompt or reference sentence of 60 or more characters verbatim. Otherwise the revised strategy solves the same problems and the frozen solver rule decides the branch.
+
+For paired generated attempts with decisions $d_i^{b}, d_i^{c}$ on $n$ problems, let $A_b=\#\{i: d_i^b=\text{accept}\}$ and $A_c$ likewise. The solver gate requires:
+
+1. Identical problem order and domains in both arms.
+2. No infrastructure errors in either arm.
+3. $A_c - A_b \ge \max(1, \lceil 0.10\,n\rceil)$.
+4. No decrease of strict accepts within mathematics or theoretical physics.
+
+Problems the baseline solved and the candidate did not are reported as `lost_solves`. A strict accept still needs the native check and all three judges; abstention never counts as a solve. One sample per problem means a pass can be luck: development selection only moves the experimental branch, and activation needs a fresh solver audit.
+
+Reviewer feedback can paraphrase a reference, so isolation from references is a strong default, not a guarantee. Verbatim-copy detection catches memorized text, not paraphrased answers; the private audit is the real check of transfer.
+
+## Solver audit input
+
+A solver audit is a fresh, independently reviewed problem set without candidate proofs. The candidate must equal the active policy except for solver guidance, name and rationale. Baseline and candidate each attempt every problem, in alternating order, under the active verifier guidance; the solver gate above decides eligibility. Budget ten calls per problem.
+
+```json
+{
+  "id": "custodian-solver-batch-001",
+  "split": "solver-audit",
+  "review_status": "independently-reviewed",
+  "reviewer": "Named reviewer or review team",
+  "provenance": "How the problems and references were independently checked",
+  "tasks": [{"id": "unique-problem-id", "family_id": "stable-family", "title": "Descriptive title",
+             "domain": "theoretical-physics", "prompt": "Precisely stated question", "reference": "Independently checked argument",
+             "rubric": ["Checkable condition"]}]
+}
+```
+
+A batch needs at least 12 problems, at least 8 families, and at least five problems in each domain. Overlap rules are the same as for verifier audits. Both audit kinds share one consumed-problem registry: a problem or family consumed by either arm can never be fresh for the other. `audit --file` selects the arm from the file's `split`; `promote` and `rollback` work for both.
+
 ## Benchmark growth
 
 Optimizer proposals are stored as `benchmark_draft` artifacts with `review_status=unreviewed`. For an independently reviewed set, prepare a development-suite JSON with `split=development`, `review_status=independently-reviewed`, `reviewer`, and `tasks` in the public task format. Then:
@@ -97,3 +138,14 @@ python -m danus_rsi import-curriculum reviewed-development.json
 ```
 
 Task IDs are immutable: revised content needs a new task ID and the same underlying family ID. Imports immediately become development exposure and can never be relabeled as a fresh audit. This intentionally keeps benchmark expansion dependent on independent label quality.
+
+The Valency miner is a second draft source. `mine --since DATE` restricts input to math/physics records first submitted on or after `DATE`, then asks the miner for at most three drafts per batch of papers. Code rejects a draft that cites a record outside its batch or whose domain does not match the cited papers' arXiv categories. Accepted drafts carry `origin=valency-miner`, the cited paper identities and permalinks, and reviewer notes. They are exposure from the moment they exist, so they can enter development data but never an audit. To review them:
+
+```bash
+python -m danus_rsi drafts --origin valency-miner --export review.json
+# A reviewer checks each statement against the full paper, edits or deletes tasks,
+# adds calibration candidates if wanted, then sets review_status and reviewer.
+python -m danus_rsi import-curriculum review.json
+```
+
+The exported file has `review_status=pending-review`, which `import-curriculum` refuses until a reviewer signs it.

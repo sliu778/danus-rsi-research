@@ -1,16 +1,18 @@
-"""Bounded research DAG and recursive development of verifier strategies."""
+"""Bounded research DAG and recursive development of verifier and solver strategies."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
+import math
 from pathlib import Path
 import time
 
 from . import agents, transport as t
-from .protocol import (DATA, DOMAINS, FROZEN_PROTOCOL, ROLES, calibration_cases, digest, metrics,
-                       promotion_gate, read_json, require, save_json, validate_audit, validate_policy, validate_suite, validate_task)
+from .protocol import (DATA, DOMAINS, FROZEN_PROTOCOL, ROLES, SOLVER_PROTOCOL, ProtocolError, calibration_cases, digest, metrics,
+                       promotion_gate, read_json, require, require_arm_change, require_no_copied_answers, save_json,
+                       solve_metrics, solver_gate, validate_audit, validate_policy, validate_solver_audit, validate_suite, validate_task)
 from .store import BudgetExceeded
-from .valency import import_snapshot
+from .valency import import_snapshot, paper_domains
 
 DEFAULT_CONFIG = {"model": "gpt-6-astra", "effort": "xhigh", "workers": 3,
                   "max_calls": 160, "deadline_seconds": 14400,
@@ -86,6 +88,22 @@ def decision_from(judgments, native):
     return "abstain"
 
 
+def solver_feedback(task, row):
+    """What the solver optimizer may see: statement, decision and stated defects, never the reference."""
+    defects = []
+    panel = row.get("panel", {})
+    for judgment in panel.get("judgments", {}).values():
+        if judgment["status"] == "ok":
+            defects += judgment["data"]["critical_errors"] + judgment["data"]["gaps"]
+    native = panel.get("native", {})
+    if native.get("status") == "ok":
+        report = native["data"]["verification_report"]
+        defects += [item["issue"] for item in report["critical_errors"] + report["gaps"]]
+    solution = row["solution"]
+    return {"task_id": task["id"], "domain": task["domain"], "prompt": task["prompt"], "decision": row["decision"],
+            "claim": solution["data"]["claim"] if solution["status"] == "ok" else None, "defects": defects}
+
+
 class Engine:
     def __init__(self, store, backend, config=None, retry_errors=False):
         self.store, self.backend = store, backend
@@ -152,20 +170,29 @@ class Engine:
                          "decision": panel["decision"], "panel": panel})
         return rows
 
+    def solve(self, key, task, policy):
+        """One generated attempt judged by the strict panel under the same policy's verifier guidance."""
+        prompt = t.solver_prompt(task) + "\n" + agents.PHYSICS + "\nSolver strategy:\n" + policy["solver_guidance"]
+        generated = self.call(key + "/solve", "solver", prompt, t.SOLUTION_SCHEMA)
+        row = {"task_id": task["id"], "domain": task["domain"], "solution": generated}
+        if generated["status"] == "ok":
+            row["panel"] = self.panel(key + "/panel", task, generated["data"], policy)
+            row["decision"] = row["panel"]["decision"]
+        else:
+            row["decision"] = "error"
+        return row
+
     def benchmark(self, suite, policy_id, limit):
         policy = self.store.get(policy_id, "policy")
-        rows = []
-        for index, task in enumerate(balanced_selection(suite["tasks"], limit)):
-            prompt = t.solver_prompt(task) + "\n" + agents.PHYSICS + "\nSolver strategy:\n" + policy["solver_guidance"]
-            generated = self.call(f"benchmark/{index}/solve", "solver", prompt, t.SOLUTION_SCHEMA)
-            row = {"task_id": task["id"], "domain": task["domain"], "solution": generated}
-            if generated["status"] == "ok":
-                row["panel"] = self.panel(f"benchmark/{index}/panel", task, generated["data"], policy)
-                row["decision"] = row["panel"]["decision"]
-            else:
-                row["decision"] = "error"
-            rows.append(row)
+        rows = [self.solve(f"benchmark/{index}", task, policy) for index, task in enumerate(balanced_selection(suite["tasks"], limit))]
         return {"kind": "benchmark", "policy": policy_id, "rows": rows}
+
+    def exposures(self, suite):
+        """Every problem statement a model or optimizer has already seen."""
+        exposed = suite["tasks"] + [x["body"] for x in self.store.artifacts("exposed_task")]
+        exposed += [t for s in self.store.artifacts("development_suite") for t in s["body"]["tasks"]]
+        exposed += [x["body"]["task"] for x in self.store.artifacts("benchmark_draft")]
+        return exposed
 
     def research(self, objective, domain, policy_id, prefix="research", memory=None):
         require(domain in DOMAINS, "unsupported research domain")
@@ -243,10 +270,7 @@ class Engine:
         require(candidate_policy["solver_guidance"] == baseline_policy["solver_guidance"] and
                 candidate_policy["curriculum_domains"] == baseline_policy["curriculum_domains"],
                 "verifier audit cannot promote changes to solver strategy or curriculum; keep these fixed")
-        exposures = suite["tasks"] + [x["body"] for x in self.store.artifacts("exposed_task")]
-        exposures += [t for s in self.store.artifacts("development_suite") for t in s["body"]["tasks"]]
-        exposures += [x["body"]["task"] for x in self.store.artifacts("benchmark_draft")]
-        validate_audit(audit, exposures)
+        validate_audit(audit, self.exposures(suite))
         regression = calibration_cases(suite)
         require(self.config["max_calls"] >= 8 * (len(audit["cases"]) + len(regression)), "audit call budget is too small; budget eight calls per paired case including regression")
         # Reserve before any evaluation. A failed/interrupted audit burns this batch.
@@ -274,3 +298,89 @@ class Engine:
         if promote and gate["eligible"]:
             self.store.promote(evaluation, code_hash(), digest(suite))
         return {"kind": "audit", "evaluation_id": evaluation, "promoted": promote and gate["eligible"], **value}
+
+    def improve_solver(self, suite, policy_id, cycles, limit, prefix="solver-rsi"):
+        """Revise solver strategy against a verifier policy held fixed for the whole comparison."""
+        require(1 <= cycles <= 5, "RSI cycles must be 1..5")
+        tasks = balanced_selection(suite["tasks"], limit)
+        results, current = [], policy_id
+        for cycle in range(cycles):
+            key = f"{prefix}/{cycle}"
+            policy = self.store.get(current, "policy")
+            baseline = [self.solve(f"{key}/baseline/{i}", task, policy) for i, task in enumerate(tasks)]
+            proposal = self.data(self.call(key + "/optimizer", "solver_optimizer", agents.prompt_for("solver_optimizer", {
+                "policy": policy, "development_results": [solver_feedback(task, row) for task, row in zip(tasks, baseline)],
+                "development_metrics": solve_metrics(baseline)}), agents.SOLVER_PROPOSAL_SCHEMA, {"policy": policy}))
+            revised = validate_policy(proposal["policy"])
+            result = {"cycle": cycle + 1, "baseline": current, "candidate": None, "selected_for_next_cycle": current,
+                      "baseline_rows": baseline, "candidate_rows": [], "production_promoted": False}
+            try:
+                require_arm_change("solver", policy, revised)
+                require(revised["solver_guidance"] != policy["solver_guidance"], "no solver strategy change proposed")
+                require_no_copied_answers(revised["solver_guidance"], suite["tasks"])
+            except ProtocolError as exc:
+                # A rejected proposal is evidence, not a crash: the branch stays unchanged.
+                result["development_gate"] = {"eligible": False, "reasons": ["proposal rejected: " + str(exc)]}
+            else:
+                candidate = self.store.put("policy", revised)
+                self.store.add_lineage(candidate, current, self.run_id)
+                proposed = [self.solve(f"{key}/candidate/{i}", task, revised) for i, task in enumerate(tasks)]
+                gate = solver_gate(baseline, proposed)
+                result.update(candidate=candidate, candidate_rows=proposed, development_gate=gate,
+                              selected_for_next_cycle=candidate if gate["eligible"] else current)
+            self.store.put("solver_improvement_cycle", {"run": self.run_id, **result})
+            results.append(result)
+            current = result["selected_for_next_cycle"]
+        return {"kind": "solver-rsi", "cycles": results, "selected_development_policy": current, "active_policy": self.store.active()}
+
+    def audit_solver(self, audit, suite, candidate_id, promote=False):
+        require(self.backend.mode == "live", "scripted evaluations cannot consume audit sets or promote policies")
+        candidate_policy = self.store.get(candidate_id, "policy")
+        baseline_id = self.store.active()
+        require(candidate_id != baseline_id, "audit candidate equals active baseline")
+        baseline_policy = self.store.get(baseline_id, "policy")
+        # The candidate must be the active policy with only solver text changed:
+        # a solver audit cannot also move the verifier it is judged by.
+        require_arm_change("solver", baseline_policy, candidate_policy)
+        validate_solver_audit(audit, self.exposures(suite))
+        require(self.config["max_calls"] >= 10 * len(audit["tasks"]), "solver audit call budget is too small; budget ten calls per paired problem")
+        self.store.reserve_audit(audit, self.run_id)
+        baseline, candidate = [], []
+        for index, task in enumerate(audit["tasks"]):
+            order = [(baseline_policy, baseline, "baseline"), (candidate_policy, candidate, "candidate")]
+            if index % 2:
+                order.reverse()
+            for policy, target, label in order:
+                target.append(self.solve(f"solver-audit/{index}/{label}", task, policy))
+        gate = solver_gate(baseline, candidate)
+        value = {"arm": "solver", "mode": "live", "protocol": SOLVER_PROTOCOL, "code_hash": code_hash(),
+                 "baseline": baseline_id, "candidate": candidate_id, "audit_digest": digest(audit), "regression_suite": digest(suite),
+                 "baseline_rows": baseline, "candidate_rows": candidate, "gate": gate}
+        evaluation = self.store.record_evaluation(self.run_id, value)
+        if promote and gate["eligible"]:
+            self.store.promote(evaluation, code_hash(), digest(suite))
+        return {"kind": "audit", "evaluation_id": evaluation, "promoted": promote and gate["eligible"], **value}
+
+    def mine(self, papers, batches=1, batch_size=6, prefix="mine"):
+        """Turn recent Valency records into quarantined benchmark drafts with paper provenance."""
+        require(bool(papers), "no eligible Valency records; import recent math/physics records or use an earlier --since")
+        require(1 <= batches <= 20 and 1 <= batch_size <= 8, "mining needs 1..20 batches of 1..8 papers")
+        drafts, rejected = [], []
+        for index in range(min(batches, math.ceil(len(papers) / batch_size))):
+            batch = papers[index * batch_size:(index + 1) * batch_size]
+            domains = {p["source"] + ":" + p["id"]: sorted(paper_domains(p)) for p in batch}
+            result = self.data(self.call(f"{prefix}/{index}", "miner", agents.prompt_for("miner", {"papers": batch}),
+                                         agents.MINER_SCHEMA, {"papers": batch, "domains": domains}))
+            for draft in result["drafts"]:
+                if not set(draft["paper_ids"]) <= set(domains):
+                    rejected.append({"title": draft["title"], "reason": "cites a record outside its batch"})
+                elif not all(draft["domain"] in domains[c] for c in draft["paper_ids"]):
+                    rejected.append({"title": draft["title"], "reason": "domain does not match the cited papers' categories"})
+                else:
+                    fields = {k: draft[k] for k in ("title", "domain", "family_id", "prompt", "reference", "rubric")}
+                    task = validate_task(dict(fields, id=digest(fields)[:20]))
+                    sources = [{k: p[k] for k in ("id", "source", "title", "url", "first_submitted") if k in p}
+                               for p in batch if p["source"] + ":" + p["id"] in draft["paper_ids"]]
+                    drafts.append(self.store.put("benchmark_draft", {"run": self.run_id, "origin": "valency-miner", "review_status": "unreviewed",
+                                                                     "task": task, "source_papers": sources, "review_notes": draft["review_notes"]}))
+        return {"kind": "mining", "papers": len(papers), "drafts": drafts, "rejected": rejected}

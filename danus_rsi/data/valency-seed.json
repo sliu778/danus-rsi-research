@@ -233,6 +233,57 @@
           ]
         }
       ]
+    },
+    {
+      "provider": "valency",
+      "retrieved_at": "2026-10-23",
+      "query": "spectral properties of compact and quasinilpotent operators on Banach and Hilbert spaces",
+      "tool": "semantic_search_papers",
+      "server_version": "0.4.1",
+      "warnings": [
+        "Multiple similar results - top match may not be definitive",
+        "100% of results lack DOI. Use filter_papers_with_doi to restrict to papers with DOI identifiers."
+      ],
+      "papers": [
+        {"id": "2609.09775v1", "source": "arxiv", "title": "Power quasinormal operators and the root problem",
+         "url": "https://arxiv.org/abs/2609.09775", "doi": "", "authors": ["Jing-Bin Zhou", "Shihai Yang"],
+         "categories": ["math.FA"], "first_submitted": "2026-09-09"},
+        {"id": "2610.13490v1", "source": "arxiv", "title": "Quasinormal and hyponormal operators in the $\\beta(H)$-class",
+         "url": "https://arxiv.org/abs/2610.13490", "doi": "", "authors": ["Ramesh Golla", "Hiroyuki Osaka", "Shanola S. Sequeira"],
+         "categories": ["math.FA"], "first_submitted": "2026-10-09"},
+        {"id": "2609.10616v1", "source": "arxiv", "title": "A note on the Browder S-spectrum of a bounded quaternionic operator",
+         "url": "https://arxiv.org/abs/2609.10616", "doi": "", "authors": ["Mohamed Ali Dbeibia"],
+         "categories": ["math.FA", "math.SP"], "first_submitted": "2026-09-08"},
+        {"id": "2608.06873v2", "source": "arxiv", "title": "Spectral theorem for compact self-adjoint operators on smooth Banach spaces",
+         "url": "https://arxiv.org/abs/2608.06873", "doi": "", "authors": ["Mohammed Shameem"],
+         "categories": ["math.FA", "math.SP"], "first_submitted": "2026-08-07"}
+      ]
+    },
+    {
+      "provider": "valency",
+      "retrieved_at": "2026-10-23",
+      "query": "power counting and operator dimensions in effective field theory on curved or time-dependent backgrounds",
+      "tool": "semantic_search_papers",
+      "server_version": "0.4.1",
+      "warnings": [
+        "Multiple similar results - top match may not be definitive",
+        "100% of results lack DOI. Use filter_papers_with_doi to restrict to papers with DOI identifiers."
+      ],
+      "papers": [
+        {"id": "2609.38496v1", "source": "arxiv", "title": "Leading Logarithms in the Effective Theory of Gravity: corrections to the scalar mass",
+         "url": "https://arxiv.org/abs/2609.38496", "doi": "",
+         "authors": ["Diana V. Mysliaeva", "Kirill M. Semenov-Tian-Shansky", "Dmitrii V. Vasilev", "Alexey Vladimirov"],
+         "categories": ["hep-th", "gr-qc"], "first_submitted": "2026-09-29"},
+        {"id": "2610.24227v1", "source": "arxiv", "title": "Covariant One-Loop Corrections from a Non-Covariant Expansion: The Scalar Field Case",
+         "url": "https://arxiv.org/abs/2610.24227", "doi": "", "authors": ["Lucas Ducastelo de C. C. Lima", "Riccardo Fecchio"],
+         "categories": ["hep-th"], "first_submitted": "2026-10-16"},
+        {"id": "2608.21865v1", "source": "arxiv", "title": "Characteristic-cone running from on-shell residues: Identifiability on the physical EFT quotient",
+         "url": "https://arxiv.org/abs/2608.21865", "doi": "", "authors": ["Renat Gafarov"],
+         "categories": ["hep-th", "gr-qc"], "first_submitted": "2026-08-22"},
+        {"id": "2609.10365v1", "source": "arxiv", "title": "Universal Secular External Leg Corrections for Gauge Independent Scalar Self-Mass on de Sitter",
+         "url": "https://arxiv.org/abs/2609.10365", "doi": "", "authors": ["D. Glavan (CEICO)", "S. P. Miao (NCKU)", "T. Prokopec (U. Utrecht)", "R. P. Woodard (U. Florida)"],
+         "categories": ["gr-qc", "astro-ph.CO", "hep-th"], "first_submitted": "2026-09-09"}
+      ]
     }
   ]
 }
