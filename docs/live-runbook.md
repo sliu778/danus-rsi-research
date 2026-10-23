@@ -49,6 +49,15 @@ bash scripts/run.sh benchmark --limit 2 --max-calls 10 --state "$STATE"
 
 This exercises the whole live path once: solver session, native verifier, three judges, report. Read `reports/<run>/report.html` and the `calls/` evidence before spending more. Infrastructure errors here are configuration problems, not mathematics.
 
+**Known issue: concurrent judge sessions.** In the first live smoke run (2026-10-23), both solver calls and both native verifications succeeded, but all six judge calls failed. Judges run three at a time, and each judge's Codex session logged `failed to refresh available models: request timed out`, retried five times, and ended with `workspace routing discovery failed` after about 170 seconds. Sequential calls before and between the judge rounds succeeded, which points at concurrent session start-up. Until a sequential run confirms or rules this out, run the panel one judge at a time:
+
+```bash
+echo '{"workers": 1}' > ~/danus-rsi-sequential.json
+bash scripts/run.sh benchmark --limit 2 --max-calls 10 --config ~/danus-rsi-sequential.json --state "$STATE"
+```
+
+Calls failed this way are charged and recorded as infrastructure errors, so `--retry-errors` on the same run needs budget beyond the original `--max-calls`.
+
 ## 4. First solver experiment
 
 ```bash
