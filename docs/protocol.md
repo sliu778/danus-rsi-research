@@ -99,16 +99,18 @@ Audit labels/results are stored only in ignored local state and are never suppli
 
 A solver development cycle selects development problems, generates one candidate per problem under the current branch, judges each with the same panel and native check as the benchmark, and asks the solver optimizer for revised solver guidance. The optimizer sees problem statements, the decisions, the reviewers' stated defects and the solve counts. It never sees references. A proposal is rejected without evaluation, and the branch is unchanged, if it changes a frozen field, leaves the solver guidance unchanged, or quotes a development prompt or reference sentence of 60 or more characters verbatim. Otherwise the revised strategy solves the same problems and the frozen solver rule decides the branch.
 
-For paired generated attempts with decisions $d_i^{b}, d_i^{c}$ on $n$ problems, let $A_b=\#\{i: d_i^b=\text{accept}\}$ and $A_c$ likewise. The solver gate requires:
+Each policy makes $k$ independent attempts at each of $n$ problems (`--samples k`, $1\le k\le 5$, default 1). With decisions $d_{ij}^{b}, d_{ij}^{c}$ for problem $i$ and attempt $j$, let $A_b=\#\{(i,j): d_{ij}^b=\text{accept}\}$ and $A_c$ likewise. The solver gate (protocol `danus-rsi-solver-v2`) requires:
 
-1. Identical problem order and domains in both arms.
+1. Identical problem order, domains and attempt counts in both arms.
 2. No infrastructure errors in either arm.
-3. $A_c - A_b \ge \max(1, \lceil 0.10\,n\rceil)$.
+3. $A_c - A_b \ge \max(1, \lceil 0.10\,nk\rceil)$.
 4. No decrease of strict accepts within mathematics or theoretical physics.
 
-Problems the baseline solved and the candidate did not are reported as `lost_solves`. A strict accept still needs the native check and all three judges; abstention never counts as a solve. One sample per problem means a pass can be luck: development selection only moves the experimental branch, and activation needs a fresh solver audit.
+With $k=1$ this is exactly the earlier single-sample rule, and the call keys are unchanged. Problems where the candidate has fewer accepted attempts than the baseline are reported as `lost_solves`. A strict accept still needs the native check and all three judges; abstention never counts as a solve.
 
-Reviewer feedback can paraphrase a reference, so isolation from references is a strong default, not a guarantee. Verbatim-copy detection catches memorized text, not paraphrased answers; the private audit is the real check of transfer.
+Every result also reports a 95% Wilson interval for the strict-accept rate, and verifier metrics report one for each label class. The intervals are descriptive and never enter a gate. They show the problem plainly: with one attempt at each of four problems and no accepts, the interval for the solve rate is $[0, 0.49]$. More samples narrow it at a linear cost in calls. Development selection only moves the experimental branch, and activation needs a fresh solver audit, which also accepts `--samples`.
+
+Reviewers see the reference, so a defect they state can quote it. Before feedback reaches the solver optimizer, any defect that repeats eight consecutive words of the problem's reference is replaced by a withheld marker, and the count is recorded. Paraphrase passes this filter, so isolation from references is a strong default, not a guarantee. Verbatim-copy detection on proposed strategies catches memorized text, not paraphrased answers; the private audit is the real check of transfer.
 
 ## Solver audit input
 
@@ -139,7 +141,7 @@ python -m danus_rsi import-curriculum reviewed-development.json
 
 Task IDs are immutable: revised content needs a new task ID and the same underlying family ID. Imports immediately become development exposure and can never be relabeled as a fresh audit. This intentionally keeps benchmark expansion dependent on independent label quality.
 
-The Valency miner is a second draft source. `mine --since DATE` restricts input to math/physics records first submitted on or after `DATE`, then asks the miner for at most three drafts per batch of papers. Code rejects a draft that cites a record outside its batch or whose domain does not match the cited papers' arXiv categories. Accepted drafts carry `origin=valency-miner`, the cited paper identities and permalinks, and reviewer notes. They are exposure from the moment they exist, so they can enter development data but never an audit. To review them:
+The Valency miner is a second draft source. `mine --since DATE` restricts input to math/physics records first submitted on or after `DATE`, then asks the miner for at most three drafts per batch of papers. Code rejects a draft that cites a record outside its batch, whose domain does not match the cited papers' arXiv categories, or whose family or normalized statement repeats a problem already exposed (development data, research tasks, earlier drafts, or another draft in the same run). Accepted drafts carry `origin=valency-miner`, the cited paper identities and permalinks, and reviewer notes. They are exposure from the moment they exist, so they can enter development data but never an audit. To review them:
 
 ```bash
 python -m danus_rsi drafts --origin valency-miner --export review.json

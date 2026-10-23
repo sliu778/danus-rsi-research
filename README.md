@@ -2,7 +2,7 @@
 
 A bounded research-agent system for graduate mathematics and theoretical physics, built on [Danus](https://github.com/frenzymath/Danus) and the preceding Danus Math Panel benchmark. It runs research workflows, measures proposed verifier strategies, and maintains an auditable history of experiments.
 
-**Status: experimental infrastructure, version 0.2.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
+**Status: experimental infrastructure, version 0.3.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
 
 ## What runs
 
@@ -83,8 +83,9 @@ bash scripts/run.sh benchmark --limit 4 --max-calls 32
 # Two bounded cycles of verifier-strategy development:
 bash scripts/run.sh improve --cycles 2 --limit 8 --max-calls 160
 
-# Two bounded cycles of solver-strategy development (verifier guidance fixed):
-bash scripts/run.sh improve --arm solver --cycles 2 --limit 6 --max-calls 160
+# Two bounded cycles of solver-strategy development (verifier guidance fixed),
+# three attempts per problem so one lucky sample cannot decide the branch:
+bash scripts/run.sh improve --arm solver --cycles 2 --limit 6 --samples 3 --max-calls 400
 
 # A research campaign alternating verifier and solver development between rounds:
 bash scripts/run.sh run \
@@ -148,7 +149,7 @@ python -m danus_rsi rollback PREVIOUS_ACTIVE_POLICY_ID
 
 The gate requires complete coverage, at least a 0.05 increase in balanced accuracy, no increase in false acceptances, no per-domain regression, and no loss on the frozen development regression cases. These are finite-sample engineering criteria, not a statistical guarantee of generalization. A failed/interrupted audit consumes its batch.
 
-A solver candidate is audited on a separate `split: "solver-audit"` file of at least 12 fresh problems without candidate proofs: at least 8 families and at least five per domain. Both policies attempt each problem under the active verifier guidance. The gate requires no infrastructure errors, at least $\max(1,\lceil 0.1n\rceil)$ more strict accepts, and no per-domain loss. Verifier and solver audits share one consumed-problem registry. [Full protocol and audit formats](docs/protocol.md).
+A solver candidate is audited on a separate `split: "solver-audit"` file of at least 12 fresh problems without candidate proofs: at least 8 families and at least five per domain. Both policies attempt each problem $k$ times (`--samples k`) under the active verifier guidance. The gate requires no infrastructure errors, at least $\max(1,\lceil 0.1nk\rceil)$ more strict accepts over all attempts, and no per-domain loss. Reports add 95% Wilson intervals, which are descriptive only, so the noise behind small counts is visible. Verifier and solver audits share one consumed-problem registry. [Full protocol and audit formats](docs/protocol.md).
 
 ## Evidence, continuation and limits
 
