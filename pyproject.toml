@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "danus-rsi-research"
+version = "0.1.0"
+description = "Bounded research orchestration and evaluated verifier improvement for Danus"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+dependencies = []
+
+[project.optional-dependencies]
+valency = ["mcp>=2.3,<3", "httpx2>=2,<3"]
+
+[project.scripts]
+danus-rsi = "danus_rsi.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["danus_rsi*"]
+
+[tool.setuptools.package-data]
+danus_rsi = ["data/*.json"]

@@ -1,0 +1,10 @@
+{
+  "foundation": "Danus Math Panel 1.0.0, authored in the preceding local project",
+  "upstream": "https://github.com/frenzymath/Danus",
+  "upstream_commit_prefix": "6d92e8d",
+  "source_sha256": {
+    "bench.py": "9a95f32f1b56e22a18ca5778fc8291635105e134a1d161fe14b076f21376d517",
+    "tasks.json": "fa519e253bfce691b20cdf02957e8f49ab206a5cd1fa8cf25432c19ea8f204f7",
+    "benchmark.json": "b6c804fe83e0f4d408bdc8620496f318c037e99a7451e0f7f03f52f7ddf7cb64"
+  }
+}

@@ -1,0 +1,16 @@
+Danus RSI Research
+Copyright 2026 Danus RSI Research contributors
+
+This project extends the preceding locally authored Danus Math Panel 1.0.0.
+danus_rsi/transport.py adapts its transport, rubric, validation and isolation code.
+The original twelve mathematics tasks are retained as public development data.
+Source hashes are recorded in danus_rsi/data/foundation-provenance.json.
+
+Danus upstream: https://github.com/frenzymath/Danus
+Examined commit: 6d92e8d415933ca2ef52fd1a4da73fdfcd418f1c (Apache-2.0).
+Danus is an external runtime dependency; its implementation is not bundled here.
+
+Valency records are scholarly metadata retrieved from the connected service.
+Paper links and attribution remain attached to each record. Inclusion is not
+an endorsement, a verification of the paper's claims, or permission to copy
+its full text. No third-party paper full text is redistributed.

@@ -1,0 +1,282 @@
+{
+  "name": "Danus RSI mathematics and theoretical physics development suite",
+  "version": "0.1.0",
+  "provenance": "Prompts, solutions, and rubric text authored for this local benchmark around classical mathematical results. No claim of novel research theorems or contamination-free test data.",
+  "reference_status": "Authored reference arguments and calibration labels; not independently expert-certified or formally verified. Judges must flag reference concerns and accept alternative correct proofs.",
+  "scope": "Graduate and research-style closed-book reasoning, not unresolved open-problem solving. Level labels describe intended scope, not empirical difficulty.",
+  "tasks": [
+    {
+      "id": "compact-selfadjoint-extremum",
+      "title": "Norm attainment and the role of compactness",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "theorem-and-boundary",
+      "prompt": "Let \\(H\\) be a real or complex Hilbert space and \\(T:H\\to H\\) a nonzero compact self-adjoint operator. Prove that at least one of \\(\\|T\\|\\) and \\(-\\|T\\|\\) is an eigenvalue. Do not invoke the compact spectral theorem. You may use weak sequential compactness of the unit ball of a Hilbert space. Show by an explicit bounded self-adjoint operator on \\(\\ell^2(\\mathbb N)\\) that compactness cannot simply be dropped.",
+      "reference": "Write \\(m=\\|T\\|>0\\). Choose unit vectors \\(x_n\\) with \\(\\|Tx_n\\|\\to m\\). A subsequence converges weakly to \\(x\\). Compactness implies \\(Tx_n\\to Tx\\) in norm: otherwise compactness would give a further norm-convergent subsequence with limit different from the uniquely determined weak limit \\(Tx\\). Thus \\(\\|Tx\\|=m\\), while \\(\\|x\\|\\le1\\); the operator norm bound forces \\(\\|x\\|=1\\). The positive operator \\(B=m^2I-T^2\\) satisfies \\(\\langle Bx,x\\rangle=0\\). Positivity of \\(\\langle B(x+ty),x+ty\\rangle\\) for real \\(t\\), and also replacing \\(y\\) by \\(iy\\) in the complex case, forces \\(\\langle Bx,y\\rangle=0\\) for all \\(y\\). Hence \\(T^2x=m^2x\\). Set \\(u=x+Tx/m\\) and \\(v=x-Tx/m\\). Then \\(Tu=mu\\), \\(Tv=-mv\\), and \\(u+v=2x\\ne0\\), so at least one is a nonzero eigenvector. On \\(\\ell^2\\), let \\(Se_n=\\frac n{n+1}e_n\\). This is bounded and self-adjoint with norm 1, but neither 1 nor -1 is an eigenvalue, since the coordinate equations force every coordinate to vanish. Its images of basis vectors have no norm-convergent subsequence, so it is not compact.",
+      "rubric": [
+        "Obtain a norm-attaining vector using compactness and weak convergence.",
+        "Derive T squared x equals norm squared x without assuming the desired spectral theorem.",
+        "Handle the complex case and ensure a constructed eigenvector is nonzero.",
+        "Give a bounded self-adjoint counterexample and verify the norm and absence of both extremal eigenvalues."
+      ],
+      "calibration": [],
+      "topic": "functional-analysis",
+      "family_id": "compact-selfadjoint-extremum"
+    },
+    {
+      "id": "uniform-boundedness-dense",
+      "title": "Uniform boundedness versus a dense test set",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "theorem-and-boundary",
+      "prompt": "Let \\(X\\) be a Banach space, \\(Y\\) a normed space, and \\(T_n:X\\to Y\\) bounded linear maps. Assuming \\(\\sup_n\\|T_nx\\|<\\infty\\) for every \\(x\\in X\\), prove \\(\\sup_n\\|T_n\\|<\\infty\\) using the Baire category theorem. Then show that the conclusion can fail if the pointwise hypothesis is imposed only on a dense linear subspace of \\(X\\).",
+      "reference": "Let \\(E_k=\\{x:\\sup_n\\|T_nx\\|\\le k\\}\\). Each is closed by continuity, and their union is \\(X\\). Baire gives a ball \\(B(x_0,r)\\subset E_k\\) for some \\(k,r>0\\). For any \\(\\|u\\|\\le1\\), both \\(x_0\\) and \\(x_0+(r/2)u\\) belong to \\(E_k\\), so linearity and the triangle inequality give \\(\\|T_nu\\|\\le4k/r\\), uniformly in \\(n,u\\). Thus the operator norms are bounded. For the weakened hypothesis take \\(X=\\ell^2\\), \\(Y=\\mathbb R\\) or \\(\\mathbb C\\), and \\(T_nx=nx_n\\). On the dense subspace of finitely supported sequences, each fixed vector has only finitely many nonzero values \\(T_nx\\), hence is pointwise bounded. But \\(\\|T_n\\|=n\\), by the coordinate bound and evaluation at \\(e_n\\).",
+      "rubric": [
+        "Use completeness through Baire, closedness, and a countable cover.",
+        "Convert a bound on a ball away from the origin into a uniform operator norm bound.",
+        "Provide and verify a dense linear subspace counterexample with unbounded operator norms."
+      ],
+      "calibration": [],
+      "topic": "functional-analysis",
+      "family_id": "uniform-boundedness-dense"
+    },
+    {
+      "id": "vitali-finite-measure",
+      "title": "Uniform integrability and finite measure",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "proof-audit",
+      "prompt": "On a finite measure space \\((\\Omega,\\mu)\\), let measurable integrable \\(f_n\\) converge to 0 in measure, and assume \\(\\lim_{K\\to\\infty}\\sup_n\\int_{\\{|f_n|>K\\}}|f_n|\\,d\\mu=0\\). Prove \\(\\|f_n\\|_1\\to0\\). A proposed proof says: 'Convergence in measure gives an \\(N\\) such that \\(|f_n(x)|<\\varepsilon\\) for every \\(x\\) and every \\(n\\ge N\\); integrate.' Identify the flaw. Show with an explicit sequence on \\(\\mathbb R\\) that finite total measure cannot be omitted under exactly the stated tail condition and convergence-in-measure hypothesis.",
+      "reference": "For \\(\\delta,K>0\\), split the integral into \\(|f_n|\\le\\delta\\), \\(\\delta<|f_n|\\le K\\), and \\(|f_n|>K\\). The three terms are at most \\(\\delta\\mu(\\Omega)\\), \\(K\\mu(|f_n|>\\delta)\\), and the tail integral. Given any positive error tolerance, choose \\(K\\) to make the last term uniformly small, then \\(\\delta\\) to make the first term small, then \\(n\\) to make the middle term small. This proves the claim. The proposed argument confuses convergence in measure with a uniform pointwise bound; small exceptional sets may remain at every n. On Lebesgue measure on \\(\\mathbb R\\), let \\(f_n=n^{-1}\\mathbf1_{[0,n]}\\). For every fixed \\(\\varepsilon>0\\), eventually \\(|f_n|\\le\\varepsilon\\) everywhere, so convergence in measure holds. For \\(K>1\\) every tail integral is zero. Nevertheless \\(\\int|f_n|=1\\) for all n. Thus the stated tail condition alone does not replace finite total measure.",
+      "rubric": [
+        "Use the small-value, bounded-middle, and large-tail decomposition with the quantifiers in the correct order.",
+        "Explain why convergence in measure does not imply the asserted uniform pointwise estimate.",
+        "Verify convergence in measure, the exact uniform tail condition, and failure of L1 convergence for the infinite-measure counterexample."
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "On a finite measure space, convergence to zero in measure together with uniform vanishing of the stated large-value tails implies convergence to zero in L1. Convergence in measure does not imply uniform pointwise convergence. On the real line, \\(f_n=n^{-1}\\mathbf1_{[0,n]}\\) satisfies those two hypotheses but has L1 norm 1.",
+            "claim": "On a finite measure space, convergence to zero in measure together with uniform vanishing of the stated large-value tails implies convergence to zero in L1. Convergence in measure does not imply uniform pointwise convergence. On the real line, \\(f_n=n^{-1}\\mathbf1_{[0,n]}\\) satisfies those two hypotheses but has L1 norm 1.",
+            "proof": "For \\(\\delta,K>0\\), split the integral into \\(|f_n|\\le\\delta\\), \\(\\delta<|f_n|\\le K\\), and \\(|f_n|>K\\). The three terms are at most \\(\\delta\\mu(\\Omega)\\), \\(K\\mu(|f_n|>\\delta)\\), and the tail integral. Given any positive error tolerance, choose \\(K\\) to make the last term uniformly small, then \\(\\delta\\) to make the first term small, then \\(n\\) to make the middle term small. This proves the claim. The proposed argument confuses convergence in measure with a uniform pointwise bound; small exceptional sets may remain at every n. On Lebesgue measure on \\(\\mathbb R\\), let \\(f_n=n^{-1}\\mathbf1_{[0,n]}\\). For every fixed \\(\\varepsilon>0\\), eventually \\(|f_n|\\le\\varepsilon\\) everywhere, so convergence in measure holds. For \\(K>1\\) every tail integral is zero. Nevertheless \\(\\int|f_n|=1\\) for all n. Thus the stated tail condition alone does not replace finite total measure."
+          },
+          "explanation": "Author-supplied complete reference argument; requires independent expert review before use as a certified gold label."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The conclusion follows by integrating uniform convergence; the same proof works on an infinite space.",
+            "claim": "The two stated convergence assumptions imply \\(\\|f_n\\|_1\\to0\\) on every measure space.",
+            "proof": "Convergence in measure implies that eventually \\(|f_n(x)|<\\varepsilon\\) simultaneously for every x. Therefore the integral is eventually smaller than \\(\\varepsilon\\), even when the space has infinite measure. The proposed proof is correct and no counterexample exists."
+          },
+          "explanation": "Confuses convergence in measure with uniform convergence and integrates a uniform bound over infinite measure incorrectly; the supplied explicit sequence refutes the claimed extension."
+        }
+      ],
+      "topic": "measure-theory",
+      "family_id": "vitali-finite-measure"
+    },
+    {
+      "id": "volterra-spectral-audit",
+      "title": "A compact quasinilpotent operator",
+      "domain": "mathematics",
+      "level": "research",
+      "kind": "proof-audit",
+      "prompt": "On \\(L^2[0,1]\\), let \\((Vf)(x)=\\int_0^x f(t)\\,dt\\). Audit the claim: 'Every nonzero compact operator on a complex Hilbert space has a nonzero eigenvalue, because its norm is attained.' Prove that \\(V\\) is a counterexample: it is compact, nonzero, and has spectral radius 0. Establish the integral kernel of \\(V^n\\) and a sufficient operator norm bound. You may use the Hilbert-Schmidt compactness criterion, Schur's test, and the spectral radius formula. Identify precisely the missing hypothesis in the claimed norm-attainment argument.",
+      "reference": "The kernel \\(\\mathbf1_{0\\le t\\le x\\le1}\\) is square-integrable, so V is Hilbert-Schmidt and compact; \\(V1=x\\), so it is nonzero. Iterated integration (justified by Fubini, first for integrable inputs on this finite interval) gives \\((V^nf)(x)=\\frac1{(n-1)!}\\int_0^x(x-t)^{n-1}f(t)\\,dt\\) for n at least 1. Both the supremum row integral and supremum column integral of its nonnegative kernel are at most \\(1/n!\\). Schur's test yields \\(\\|V^n\\|\\le1/n!\\). Since \\((n!)^{1/n}\\to\\infty\\) (at least half the factors are at least n/2), the spectral radius formula gives \\(r(V)=0\\). Hence there is no nonzero eigenvalue. Norm attainment for a general compact operator yields a singular vector, an eigenvector of \\(V^*V\\), not necessarily of V. Self-adjointness would allow the argument through \\(T^2\\); it is absent here. For example \\(V^*1=1-x\\ne x=V1\\), so V is not self-adjoint.",
+      "rubric": [
+        "Prove compactness and nonzeroness of the specified operator.",
+        "Derive the correct factorial kernel for powers and a valid operator norm bound.",
+        "Use the spectral radius formula with the correct asymptotic bound.",
+        "Distinguish singular vectors from eigenvectors and explain where self-adjointness was needed."
+      ],
+      "calibration": [],
+      "topic": "operator-theory",
+      "family_id": "volterra-spectral-audit"
+    },
+    {
+      "id": "nakayama-sharp-hypotheses",
+      "title": "Nakayama's lemma and both hypotheses",
+      "domain": "mathematics",
+      "level": "research",
+      "kind": "theorem-and-boundary",
+      "prompt": "Let R be a commutative ring with 1, I an ideal contained in its Jacobson radical, and M a finitely generated R-module. Prove that \\(IM=M\\) implies \\(M=0\\), using the determinant trick rather than citing Nakayama's lemma. Give separate explicit counterexamples when (a) the Jacobson-radical hypothesis is removed while finite generation is retained, and (b) finite generation is removed while the Jacobson-radical hypothesis is retained. Verify every claimed property of both examples.",
+      "reference": "Choose generators \\(m_1,\\ldots,m_r\\). If r=0 there is nothing to prove. Express \\(m_i=\\sum_j a_{ij}m_j\\) with \\(a_{ij}\\in I\\). For \\(A=(a_{ij})\\), the adjugate identity applied to \\((I_r-A)m=0\\) shows that \\(d=\\det(I_r-A)\\) annihilates every generator and hence M. Expanding the determinant gives \\(d\\in1+I\\). Every element of \\(1+I\\) is a unit: a nonunit lies in a maximal ideal, but since every maximal ideal contains I it cannot also contain 1 plus an element of I. Thus M=0. For (a), take \\(R=k[x]\\), \\(I=(x)\\), \\(M=R/(x-1)\\). The nonzero module is cyclic, and x acts as 1, hence IM=M. I is not contained in the maximal ideal (x-1), so not in the Jacobson radical. For (b), take \\(R=k[[t]]\\), \\(I=(t)\\), \\(M=k((t))\\). R is local: a series is a unit iff its constant term is nonzero, so its Jacobson radical is (t). Multiplication by t is surjective on the nonzero module M. It is not finitely generated, since finitely many Laurent series have a common lower bound on their t-valuations, and R-linear combinations cannot have a lower valuation, whereas M has arbitrarily negative powers of t.",
+      "rubric": [
+        "Use a generating set without incorrectly assuming it is a basis.",
+        "Show the annihilating determinant belongs to 1+I and is a unit.",
+        "Verify cyclicity, nonzeroness, IM=M, and failure of the radical condition in example (a).",
+        "Verify locality, surjectivity, and failure of finite generation in example (b)."
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "If R is commutative with identity, I is contained in its Jacobson radical, M is finitely generated, and IM=M, then M=0. Neither the radical condition nor finite generation can be omitted: respectively \\((k[x],(x),k[x]/(x-1))\\) and \\((k[[t]],(t),k((t)))\\) give counterexamples.",
+            "claim": "If R is commutative with identity, I is contained in its Jacobson radical, M is finitely generated, and IM=M, then M=0. Neither the radical condition nor finite generation can be omitted: respectively \\((k[x],(x),k[x]/(x-1))\\) and \\((k[[t]],(t),k((t)))\\) give counterexamples.",
+            "proof": "Choose generators \\(m_1,\\ldots,m_r\\). If r=0 there is nothing to prove. Express \\(m_i=\\sum_j a_{ij}m_j\\) with \\(a_{ij}\\in I\\). For \\(A=(a_{ij})\\), the adjugate identity applied to \\((I_r-A)m=0\\) shows that \\(d=\\det(I_r-A)\\) annihilates every generator and hence M. Expanding the determinant gives \\(d\\in1+I\\). Every element of \\(1+I\\) is a unit: a nonunit lies in a maximal ideal, but since every maximal ideal contains I it cannot also contain 1 plus an element of I. Thus M=0. For (a), take \\(R=k[x]\\), \\(I=(x)\\), \\(M=R/(x-1)\\). The nonzero module is cyclic, and x acts as 1, hence IM=M. I is not contained in the maximal ideal (x-1), so not in the Jacobson radical. For (b), take \\(R=k[[t]]\\), \\(I=(t)\\), \\(M=k((t))\\). R is local: a series is a unit iff its constant term is nonzero, so its Jacobson radical is (t). Multiplication by t is surjective on the nonzero module M. It is not finitely generated, since finitely many Laurent series have a common lower bound on their t-valuations, and R-linear combinations cannot have a lower valuation, whereas M has arbitrarily negative powers of t."
+          },
+          "explanation": "Author-supplied complete reference argument; requires independent expert review before use as a certified gold label."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The conclusion holds for every module, even without finite generation.",
+            "claim": "If I is in the Jacobson radical and IM=M, then M=0 without further hypotheses.",
+            "proof": "For each m in M, the equality IM=M gives m=am for one a in I. Since 1-a is a unit, m=0. Thus there is no counterexample when finite generation is removed. If the radical condition is removed the same argument still works because 1-a is always a unit for a in any proper ideal."
+          },
+          "explanation": "IM=M gives finite sums involving other module elements, not m=am. Also 1-a need not be a unit for an arbitrary proper ideal. Both claimed strengthenings are false."
+        }
+      ],
+      "topic": "commutative-algebra",
+      "family_id": "nakayama-sharp-hypotheses"
+    },
+    {
+      "id": "inseparable-fixed-field",
+      "title": "Pure inseparability versus fixed fields",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "construction-and-proof",
+      "prompt": "Let p be prime, \\(K=\\mathbb F_p(t)\\), and \\(L=K(u)\\) with \\(u^p=t\\). Prove that \\([L:K]=p\\), that every K-automorphism of L is the identity, and that L/K has no nontrivial intermediate field. Explain why a finite extension of prime degree need not equal the fixed-field extension predicted by the finite Galois correspondence, and identify the failed Galois hypothesis here. You may use Eisenstein's criterion, Gauss's lemma, and the tower law.",
+      "reference": "The polynomial \\(X^p-t\\in\\mathbb F_p[t][X]\\) is Eisenstein at the prime t: all nonleading coefficients are divisible by t and the constant coefficient is not divisible by t squared. Gauss's lemma makes it irreducible over K, hence the degree is p. In characteristic p, \\(X^p-t=(X-u)^p\\) over L (and its algebraic closure), so u is the only possible image of u under a K-automorphism. Thus the automorphism group is trivial and its fixed field is all of L, not K. If \\(K\\subset E\\subset L\\), then \\(p=[L:E][E:K]\\), forcing E=K or E=L. The minimal polynomial has zero derivative and a repeated root, so the extension is purely inseparable, not separable, and is not Galois. It is normal as the splitting field of this polynomial, but normality without separability does not suffice.",
+      "rubric": [
+        "Establish irreducibility over the rational function field, not merely absence of a displayed root.",
+        "Use the uniqueness of the p-th root in characteristic p to identify all automorphisms.",
+        "Apply the tower law to intermediate fields.",
+        "Identify separability as the missing hypothesis and compute the fixed field of the trivial group."
+      ],
+      "calibration": [],
+      "topic": "field-theory",
+      "family_id": "inseparable-fixed-field"
+    },
+    {
+      "id": "quadratic-character-sum",
+      "title": "Quadratic character sums by counting",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "proof",
+      "prompt": "Let q be an odd prime power and \\(\\chi:\\mathbb F_q\\to\\{-1,0,1\\}\\) the quadratic character with \\(\\chi(0)=0\\). Determine and prove an exact formula for \\(\\sum_{x\\in\\mathbb F_q}\\chi(ax^2+bx+c)\\) for \\(a\\ne0\\), distinguishing the cases \\(b^2-4ac=0\\) and \\(b^2-4ac\\ne0\\). Derive the underlying character-sum identity by counting solutions to an equation; do not quote a character-sum estimate or a precomputed formula.",
+      "reference": "First set \\(S(d)=\\sum_x\\chi(x^2-d)\\). If d=0, all nonzero x contribute 1 and zero contributes 0, so \\(S(0)=q-1\\). If d is nonzero, the number of pairs with \\(y^2=x^2-d\\) is \\(q+S(d)\\). Since 2 is invertible, the change of variables \\(r=x-y,s=x+y\\) is a bijection, and the equation becomes rs=d. There are exactly q-1 pairs, one for each nonzero r, so \\(S(d)=-1\\). Complete the square: \\(ax^2+bx+c=a((x+b/(2a))^2-(b^2-4ac)/(4a^2))\\). Translation is a bijection and the character is multiplicative, including at zero. Thus the desired sum is \\((q-1)\\chi(a)\\) when the discriminant is zero and \\(-\\chi(a)\\) otherwise. Odd characteristic and a nonzero leading coefficient are needed for the divisions and change of variables.",
+      "rubric": [
+        "Count q+S(d) solutions correctly, including zeros of the character.",
+        "Show the factorization substitution is bijective in odd characteristic.",
+        "Complete the square and keep the factor chi(a).",
+        "Give both discriminant cases exactly."
+      ],
+      "calibration": [],
+      "topic": "number-theory",
+      "family_id": "quadratic-character-sum"
+    },
+    {
+      "id": "graphon-four-cycle",
+      "title": "Four-cycle density and rigidity",
+      "domain": "mathematics",
+      "level": "research",
+      "kind": "theorem-and-boundary",
+      "prompt": "Let \\(W:[0,1]^2\\to[0,1]\\) be measurable and symmetric, and set \\(p=\\int_{[0,1]^2}W\\). Define \\(t(C_4,W)=\\int_{[0,1]^4}W(x_1,x_2)W(x_2,x_3)W(x_3,x_4)W(x_4,x_1)\\,dx_1\\cdots dx_4\\). Prove \\(t(C_4,W)\\ge p^4\\), and prove equality holds iff \\(W=p\\) almost everywhere. You may use basic Hilbert-Schmidt integral-operator facts. Finally determine whether the analogous bound \\(t(K_3,W)\\ge p^3\\) always holds, giving a proof or counterexample.",
+      "reference": "Let \\(d(x)=\\int W(x,z)\\,dz\\) and \\(K(x,y)=\\int W(x,z)W(y,z)\\,dz\\). Symmetry and Fubini give \\(t(C_4,W)=\\int K^2\\) and \\(\\int K=\\int d^2\\). Applying Cauchy-Schwarz on probability spaces twice gives \\(\\int K^2\\ge(\\int K)^2=(\\int d^2)^2\\ge p^4\\). If p=0 then W=0 almost everywhere by nonnegativity. Otherwise equality throughout gives \\(d=p\\) almost everywhere and \\(K=p^2\\) almost everywhere. Let T be the self-adjoint integral operator with kernel W and J the projection onto constants. Then \\(TJ=JT=pJ\\) and \\(T^2=p^2J\\). Therefore the self-adjoint operator \\(S=T-pJ\\) satisfies \\(S^2=0\\), implying \\(\\|Sf\\|^2=\\langle S^2f,f\\rangle=0\\) for every f. Thus S=0; uniqueness of the Hilbert-Schmidt kernel gives W=p almost everywhere. Conversely a constant W gives equality directly. For triangles take W=1 across the two halves of [0,1] and zero within each half. Then p=1/2 but every triple has two vertices in the same half, so t(K3,W)=0, disproving the proposed triangle lower bound.",
+      "rubric": [
+        "Derive the common-neighbor kernel identity and apply both inequalities.",
+        "Prove the equality characterization, rather than only exhibiting constant graphons.",
+        "Handle p=0 and almost-everywhere qualifications.",
+        "Verify the balanced bipartite graphon's edge and triangle densities."
+      ],
+      "calibration": [],
+      "topic": "extremal-combinatorics",
+      "family_id": "graphon-four-cycle"
+    },
+    {
+      "id": "optional-stopping-ui",
+      "title": "Optional stopping and lost expectation",
+      "domain": "mathematics",
+      "level": "research",
+      "kind": "proof-audit",
+      "prompt": "Let \\(S_n\\) be the simple symmetric random walk on \\(\\mathbb Z\\) started at 0, and \\(\\tau=\\inf\\{n\\ge0:S_n=1\\}\\). Prove \\(\\tau<\\infty\\) almost surely and \\(\\mathbb E S_{\\tau\\wedge n}=0\\) for every n, but \\(\\mathbb E S_\\tau=1\\). Show explicitly that \\(\\{S_{\\tau\\wedge n}\\}\\) is not uniformly integrable, and identify the invalid step in applying bounded optional stopping and then simply passing n to infinity. You may use bounded optional stopping and dominated convergence, but not a recurrence theorem for the walk.",
+      "reference": "For positive integer m let \\(\\sigma_m\\) be the first hit of 1 or -m. From any interior state there is probability at least \\(2^{-(m+1)}\\) to exit within m+1 steps by taking all upward steps. Conditioning on successive blocks bounds the survival probability geometrically, so \\(\\sigma_m<\\infty\\) almost surely. Bounded optional stopping gives \\(\\mathbb ES_{\\sigma_m\\wedge n}=0\\). The stopped variables lie in [-m,1], so dominated convergence gives \\(\\mathbb ES_{\\sigma_m}=0\\). If a is the probability to exit at 1, then \\(a-m(1-a)=0\\), hence a=m/(m+1). Thus \\(\\mathbb P(\\tau<\\infty)\\ge m/(m+1)\\) for all m, giving probability 1. Bounded optional stopping separately yields \\(\\mathbb ES_{\\tau\\wedge n}=0\\). These variables converge almost surely to 1. Their positive parts are bounded by 1 and converge to 1, so their expected positive parts tend to 1. The zero expectations force the expected negative parts also to tend to 1, although the negative parts converge to 0 almost surely. For any fixed K, the negative parts truncated to at most K have expectation tending to 0 by dominated convergence. Their tails therefore have liminf expectation at least 1, violating uniform integrability. Almost-sure convergence alone does not allow exchange of limit and expectation, and no common integrable dominating variable has been established.",
+      "rubric": [
+        "Prove finiteness of the two-boundary exit time without assuming recurrence.",
+        "Derive the exit probability with a justified bounded/dominated stopping argument.",
+        "Distinguish bounded stopping times from the unbounded hitting time.",
+        "Give an explicit tail or negative-part argument for failure of uniform integrability."
+      ],
+      "calibration": [],
+      "topic": "probability",
+      "family_id": "optional-stopping-ui"
+    },
+    {
+      "id": "weak-versus-total-variation",
+      "title": "Weak convergence without total variation convergence",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "construction-and-proof",
+      "prompt": "Let \\(\\mu_n\\) be the probability measure on [0,1] with Lebesgue density \\(f_n(x)=1+\\sin(2\\pi nx)\\). Prove \\(\\mu_n\\) converges weakly to Lebesgue probability measure \\(\\lambda\\), and compute \\(\\sup_{A\\text{ measurable}}|\\mu_n(A)-\\lambda(A)|\\) exactly for every positive integer n. Explain why this is not a contradiction. Prove the needed oscillatory-integral limit directly rather than quoting the Riemann-Lebesgue lemma.",
+      "reference": "The density is nonnegative and integrates to 1 because the sine term integrates to zero over n periods. For continuous g, use its uniform continuity. On each interval [j/n,(j+1)/n], replace g(x) by g(j/n); the constant part integrates against the sine to zero. The absolute error summed over all intervals is at most the modulus of continuity of g at 1/n, which tends to zero. Therefore \\(\\int g\\,d\\mu_n\\to\\int g\\,d\\lambda\\), proving weak convergence. For the signed density h=sin(2πnx), its positive and negative integrals are equal. For any measurable A the signed integral over A lies between minus and plus \\(\\int h_+\\), and equality is achieved by A={h>0}. On each period the integral of the positive part is \\(1/(\\pi n)\\); summing n periods gives \\(\\int h_+=1/\\pi\\). Hence the displayed supremum is exactly 1/π, equivalently half the L1 distance of the densities. Weak convergence tests each fixed continuous function, whereas total variation takes a supremum over measurable sets that may depend on n; weak convergence does not imply this uniform control.",
+      "rubric": [
+        "Verify that the density defines a probability measure.",
+        "Prove the oscillatory limit for every continuous test function by a direct argument.",
+        "Use the requested sup-over-sets convention for total variation and avoid a factor-of-two error.",
+        "Exhibit maximizing sets and explain the distinction between the two convergence modes."
+      ],
+      "calibration": [],
+      "topic": "probability-measures",
+      "family_id": "weak-versus-total-variation"
+    },
+    {
+      "id": "compact-not-sequential",
+      "title": "A compact space with no convergent subsequence",
+      "domain": "mathematics",
+      "level": "graduate",
+      "kind": "construction-and-proof",
+      "prompt": "In the product topology on \\(X=\\{0,1\\}^{\\mathcal P(\\mathbb N)}\\), where each factor is discrete, define \\(x_n(A)=1\\) if \\(n\\in A\\) and 0 otherwise. Prove that X is compact yet the sequence \\((x_n)\\) has no convergent subsequence. You may invoke Tychonoff's theorem. Explain exactly why this does not contradict sequential compactness of compact metric spaces.",
+      "reference": "Each two-point discrete factor is compact, so Tychonoff makes the full product compact. Consider any subsequence indexed by distinct increasing integers \\(n_k\\). Let \\(A=\\{n_{2j}:j\\ge1\\}\\), a legitimate coordinate in the index set \\(\\mathcal P(\\mathbb N)\\). At that coordinate the values \\(x_{n_k}(A)\\) alternate between 0 and 1 and hence do not converge in the discrete space. Product convergence requires convergence at every coordinate because each coordinate projection is continuous. Thus no subsequence converges. The general implication from compactness to sequential compactness requires additional hypotheses such as metrizability. Indeed if this product were metrizable, compact metric sequential compactness would contradict the constructed sequence; hence it is not metrizable. Compactness of a general space is formulated through open covers (or nets), not necessarily convergent subsequences.",
+      "rubric": [
+        "Apply Tychonoff to the specified index set.",
+        "For an arbitrary subsequence, construct a coordinate depending on that subsequence which obstructs convergence.",
+        "Explain coordinatewise convergence in a product topology.",
+        "Locate the missing metrizability hypothesis without claiming that all compact spaces are sequentially compact."
+      ],
+      "calibration": [],
+      "topic": "topology",
+      "family_id": "compact-not-sequential"
+    },
+    {
+      "id": "local-lemma-dependence",
+      "title": "The local lemma and joint independence",
+      "domain": "mathematics",
+      "level": "research",
+      "kind": "theorem-and-boundary",
+      "prompt": "Let \\(A_1,\\ldots,A_N\\) be events with \\(\\mathbb P(A_i)\\le p\\), and let a graph of maximum degree d satisfy: each \\(A_i\\) is independent of the sigma-algebra generated by all events corresponding to its non-neighbors other than itself. If there exists \\(x\\in(0,1)\\) with \\(p\\le x(1-x)^d\\), prove \\(\\mathbb P(\\bigcap_i A_i^c)>0\\) by a conditional-probability induction. Deduce that \\(ep(d+1)\\le1\\) suffices when \\(d\\ge1\\). Finally show that replacing joint independence from that sigma-algebra by pairwise independence from each non-neighbor is insufficient, using an explicit three-event example with d=0.",
+      "reference": "Induct on the size of a conditioning set S not containing i to show \\(\\mathbb P(A_i\\mid\\bigcap_{j\\in S}A_j^c)\\le x\\), simultaneously ensuring all conditioning intersections have positive probability. The empty case follows from p≤x. Split S into neighbors S1 of i and non-neighbors S2. Joint independence makes \\(\\mathbb P(A_i\\mid\\bigcap_{S2}A_j^c)=\\mathbb P(A_i)\\le p\\). If S1 is empty this already proves the desired bound. Otherwise the conditional probability with all of S is at most p divided by \\(\\mathbb P(\\bigcap_{S1}A_j^c\\mid\\bigcap_{S2}A_j^c)\\). Expand this denominator by the chain rule, ordering S1. Each conditioning set in its factors is smaller than S, so the induction bounds each factor below by 1-x. Thus the denominator is at least \\((1-x)^{|S1|}\\ge(1-x)^d\\), giving the result. Positivity of an avoidance intersection of size k follows by the chain rule using bounds for conditioning sets of size at most k-1, so the induction is well-founded. Finally \\(\\mathbb P(\\bigcap_i A_i^c)\\ge(1-x)^N>0\\). For d≥1, choose x=1/(d+1). The inequality \\((1+1/d)^d<e\\) gives \\(x(1-x)^d>1/(e(d+1))\\), establishing the sufficient criterion. For the pairwise counterexample let U,V be independent fair bits and take A1={U=0}, A2={V=0}, A3={U=V}. All three probabilities are 1/2 and every pair is independent (each pairwise intersection has probability 1/4). With the empty graph d=0, p=x=1/2 satisfies the displayed general criterion. But avoiding A1 and A2 forces U=V=1, which makes A3 occur; hence all three complements have empty intersection. Pairwise independence does not imply independence from the joint sigma-algebra.",
+      "rubric": [
+        "State the conditional bound and establish positivity without conditioning on null events.",
+        "Separate neighboring and non-neighboring events and use joint independence in the correct place.",
+        "Bound the chain-rule denominator using only smaller conditioning sets.",
+        "Derive the exponential sufficient criterion with correct inequalities.",
+        "Give the fair-bit example, verify pairwise independence, and verify that avoiding all events is impossible."
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "For a finite event family with probability bounds p and the stated joint-independence dependency graph of maximum degree d, \\(p\\le x(1-x)^d\\) for some \\(0<x<1\\) implies avoidance probability at least \\((1-x)^N>0\\). For d at least 1, \\(ep(d+1)\\le1\\) is sufficient. Pairwise independence alone is insufficient, as witnessed by events U=0, V=0, U=V for two independent fair bits and the empty graph.",
+            "claim": "For a finite event family with probability bounds p and the stated joint-independence dependency graph of maximum degree d, \\(p\\le x(1-x)^d\\) for some \\(0<x<1\\) implies avoidance probability at least \\((1-x)^N>0\\). For d at least 1, \\(ep(d+1)\\le1\\) is sufficient. Pairwise independence alone is insufficient, as witnessed by events U=0, V=0, U=V for two independent fair bits and the empty graph.",
+            "proof": "Induct on the size of a conditioning set S not containing i to show \\(\\mathbb P(A_i\\mid\\bigcap_{j\\in S}A_j^c)\\le x\\), simultaneously ensuring all conditioning intersections have positive probability. The empty case follows from p≤x. Split S into neighbors S1 of i and non-neighbors S2. Joint independence makes \\(\\mathbb P(A_i\\mid\\bigcap_{S2}A_j^c)=\\mathbb P(A_i)\\le p\\). If S1 is empty this already proves the desired bound. Otherwise the conditional probability with all of S is at most p divided by \\(\\mathbb P(\\bigcap_{S1}A_j^c\\mid\\bigcap_{S2}A_j^c)\\). Expand this denominator by the chain rule, ordering S1. Each conditioning set in its factors is smaller than S, so the induction bounds each factor below by 1-x. Thus the denominator is at least \\((1-x)^{|S1|}\\ge(1-x)^d\\), giving the result. Positivity of an avoidance intersection of size k follows by the chain rule using bounds for conditioning sets of size at most k-1, so the induction is well-founded. Finally \\(\\mathbb P(\\bigcap_i A_i^c)\\ge(1-x)^N>0\\). For d≥1, choose x=1/(d+1). The inequality \\((1+1/d)^d<e\\) gives \\(x(1-x)^d>1/(e(d+1))\\), establishing the sufficient criterion. For the pairwise counterexample let U,V be independent fair bits and take A1={U=0}, A2={V=0}, A3={U=V}. All three probabilities are 1/2 and every pair is independent (each pairwise intersection has probability 1/4). With the empty graph d=0, p=x=1/2 satisfies the displayed general criterion. But avoiding A1 and A2 forces U=V=1, which makes A3 occur; hence all three complements have empty intersection. Pairwise independence does not imply independence from the joint sigma-algebra."
+          },
+          "explanation": "Author-supplied complete reference argument; requires independent expert review before use as a certified gold label."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "Pairwise independence is enough, so all conclusions still hold.",
+            "claim": "Under pairwise independence and p<1, the probability of avoiding every event is positive.",
+            "proof": "Pairwise independence implies mutual independence. Therefore the probability of avoiding all N events is the product of their complementary probabilities, at least (1-p)^N>0. For the proposed fair-bit example, the three events have probability one half and are pairwise independent, so their avoidance probability is one eighth. Hence there is no counterexample."
+          },
+          "explanation": "Pairwise independence is incorrectly promoted to mutual independence. The three specified fair-bit events cover the entire sample space, so the claimed avoidance probability is false."
+        }
+      ],
+      "topic": "probabilistic-combinatorics",
+      "family_id": "local-lemma-dependence"
+    }
+  ],
+  "split": "development"
+}

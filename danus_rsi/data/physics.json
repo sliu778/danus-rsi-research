@@ -1,0 +1,230 @@
+{
+  "name": "Theoretical physics: derivations and validity regimes",
+  "version": "0.1.0",
+  "split": "development",
+  "reference_status": "Authored textual references, not independently expert-certified. Public development data, not private holdout.",
+  "tasks": [
+    {
+      "id": "quantum-energy-time-dependence",
+      "family_id": "quantum-energy-time-dependence",
+      "title": "Unitary evolution does not imply energy conservation",
+      "topic": "quantum-theory",
+      "domain": "theoretical-physics",
+      "level": "graduate",
+      "kind": "derivation-and-boundary",
+      "prompt": "Let \\(H(t)\\) be a differentiable Hermitian matrix on a finite-dimensional Hilbert space and let \\(i\\hbar\\partial_t\\lvert\\psi\\rangle=H(t)\\lvert\\psi\\rangle\\). Prove norm conservation and derive the evolution of \\(\\langle H(t)\\rangle\\). Does unitary evolution alone imply conservation of energy? Give a concrete time-dependent Hermitian counterexample and specify the state. Avoid functional-analytic claims about unbounded operators.",
+      "reference": "Differentiate the squared norm. The two terms are \\(\\langle\\dot\\psi|\\psi\\rangle+\\langle\\psi|\\dot\\psi\\rangle=(i/\\hbar)\\langle\\psi|H|\\psi\\rangle-(i/\\hbar)\\langle\\psi|H|\\psi\\rangle=0\\). For a differentiable observable \\(A(t)\\), the product rule gives \\(d\\langle A\\rangle/dt=\\langle\\partial_t A\\rangle+(i/\\hbar)\\langle[H,A]\\rangle\\). Set \\(A=H\\) to obtain \\(d\\langle H\\rangle/dt=\\langle\\dot H\\rangle\\). In two dimensions let \\(H(t)=E_0(t/\\tau)\\sigma_z\\), with \\(\\tau>0\\), and start in the normalized positive eigenstate of \\(\\sigma_z\\). Evolution changes only its phase, but its energy expectation is \\(E_0t/\\tau\\). Explicit time dependence can therefore exchange energy with the external drive. Finite dimension avoids domain subtleties; no assertion about general unbounded Hamiltonians follows.",
+      "rubric": [
+        "Show cancellation of the norm derivative",
+        "Include the explicit derivative of the observable",
+        "Give a normalized counterexample with dimensions",
+        "Separate unitarity from time-translation invariance"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "For a differentiable finite-dimensional Hermitian Hamiltonian, norm is conserved and \\(d\\langle H\\rangle/dt=\\langle\\partial_tH\\rangle\\); unitarity alone does not conserve energy.",
+            "proof": "Differentiate the squared norm. The two terms are \\(\\langle\\dot\\psi|\\psi\\rangle+\\langle\\psi|\\dot\\psi\\rangle=(i/\\hbar)\\langle\\psi|H|\\psi\\rangle-(i/\\hbar)\\langle\\psi|H|\\psi\\rangle=0\\). For a differentiable observable \\(A(t)\\), the product rule gives \\(d\\langle A\\rangle/dt=\\langle\\partial_t A\\rangle+(i/\\hbar)\\langle[H,A]\\rangle\\). Set \\(A=H\\) to obtain \\(d\\langle H\\rangle/dt=\\langle\\dot H\\rangle\\). In two dimensions let \\(H(t)=E_0(t/\\tau)\\sigma_z\\), with \\(\\tau>0\\), and start in the normalized positive eigenstate of \\(\\sigma_z\\). Evolution changes only its phase, but its energy expectation is \\(E_0t/\\tau\\). Explicit time dependence can therefore exchange energy with the external drive. Finite dimension avoids domain subtleties; no assertion about general unbounded Hamiltonians follows."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "Every differentiable Hermitian Hamiltonian conserves energy, even with explicit time dependence.",
+            "proof": "A Hermitian Hamiltonian generates unitary evolution, so every expectation value is constant. In particular \\([H(t),H(t)]=0\\) implies \\(d\\langle H(t)\\rangle/dt=0\\), even when \\(\\partial_tH\\ne0\\). No additional term is needed."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    },
+    {
+      "id": "noether-explicit-time",
+      "family_id": "noether-explicit-time",
+      "title": "Energy balance with explicit time dependence",
+      "topic": "classical-field-theory",
+      "domain": "theoretical-physics",
+      "level": "graduate",
+      "kind": "derivation-and-boundary",
+      "prompt": "For a differentiable finite-dimensional Lagrangian \\(L(q,\\dot q,t)\\), along a sufficiently smooth Euler-Lagrange trajectory derive the evolution of \\(E=\\sum_i\\dot q_i\\partial L/\\partial\\dot q_i-L\\). Explain the role of explicit time dependence. Evaluate this identity for \\(L=m\\dot q^2/2-k(t)q^2/2\\), with \\(m>0\\) and differentiable \\(k(t)>0\\). State what changes if a time-independent Lagrangian is replaced by \\(L+dF(q,t)/dt\\).",
+      "reference": "Write \\(p_i=\\partial L/\\partial\\dot q_i\\). The product rule gives \\(\\dot E=\\sum_i\\dot q_i(\\dot p_i-\\partial L/\\partial q_i)-\\partial L/\\partial t=-\\partial L/\\partial t\\) on shell. Thus an explicitly time-independent representative has conserved \\(E\\). For the oscillator, \\(E=m\\dot q^2/2+k(t)q^2/2\\) and \\(\\dot E=\\dot k(t)q^2/2\\); the driving changes the energy. Adding a total derivative leaves the equations of motion unchanged under fixed endpoint variation. The new canonical energy is \\(E'=E-\\partial_tF\\). For an originally autonomous system, the conserved quantity in the new representative is \\(E'+\\partial_tF=E\\), rather than necessarily \\(E'\\). The energy formula depends on the representative; the underlying symmetry charge includes the boundary improvement.",
+      "rubric": [
+        "Use the Euler-Lagrange equations explicitly",
+        "Get the sign of the explicit-time term correct",
+        "Account for time-dependent stiffness",
+        "Track the total derivative improvement"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "On Euler-Lagrange solutions \\(\\dot E=-\\partial_t L\\); for the driven spring \\(\\dot E=\\dot k q^2/2\\), and adding \\(dF/dt\\) changes canonical energy to \\(E-\\partial_tF\\).",
+            "proof": "Write \\(p_i=\\partial L/\\partial\\dot q_i\\). The product rule gives \\(\\dot E=\\sum_i\\dot q_i(\\dot p_i-\\partial L/\\partial q_i)-\\partial L/\\partial t=-\\partial L/\\partial t\\) on shell. Thus an explicitly time-independent representative has conserved \\(E\\). For the oscillator, \\(E=m\\dot q^2/2+k(t)q^2/2\\) and \\(\\dot E=\\dot k(t)q^2/2\\); the driving changes the energy. Adding a total derivative leaves the equations of motion unchanged under fixed endpoint variation. The new canonical energy is \\(E'=E-\\partial_tF\\). For an originally autonomous system, the conserved quantity in the new representative is \\(E'+\\partial_tF=E\\), rather than necessarily \\(E'\\). The energy formula depends on the representative; the underlying symmetry charge includes the boundary improvement."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "Every Euler-Lagrange trajectory conserves its canonical energy even if the Lagrangian depends explicitly on time.",
+            "proof": "Euler-Lagrange equations force \\(\\dot E=0\\) for every Lagrangian because the acceleration terms cancel. Thus a time-dependent spring conserves \\(m\\dot q^2/2+k(t)q^2/2\\). Adding a total derivative cannot change the formula for canonical energy."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    },
+    {
+      "id": "eft-engineering-dimensions",
+      "family_id": "eft-engineering-dimensions",
+      "title": "EFT dimensions and the limits of power counting",
+      "topic": "effective-field-theory",
+      "domain": "theoretical-physics",
+      "level": "research",
+      "kind": "derivation-and-boundary",
+      "prompt": "Use natural units \\(\\hbar=c=1\\) and mass dimensions. For a real scalar with a canonically normalized two-derivative kinetic term in spacetime dimension \\(d>2\\), derive \\([\\phi]\\) and the mass dimension of the coefficient of \\(\\phi^n\\). In \\(d=4\\), find the suppression scale for \\((\\partial_\\mu\\phi\\partial^\\mu\\phi)^2\\). Explain why this engineering classification near the Gaussian fixed point does not by itself establish irrelevance at an interacting fixed point or guarantee a controlled expansion for an arbitrary background.",
+      "reference": "A dimensionless action requires \\([\\mathcal L]=d\\), while \\([\\partial]=1\\). The kinetic term gives \\(2+2[\\phi]=d\\), hence \\([\\phi]=(d-2)/2\\). The coefficient of \\(\\phi^n\\) has dimension \\(d-n(d-2)/2\\). In four dimensions \\([\\phi]=1\\), each differentiated field has dimension two, and the displayed operator has dimension eight. Its coefficient can be written \\(c_8/\\Lambda^4\\) with dimensionless \\(c_8\\). This is engineering counting about a specified kinetic normalization and Gaussian scaling. At an interacting fixed point composite operators acquire anomalous dimensions and mix; their full scaling dimensions determine relevance. An EFT derivative expansion also needs external momenta below the cutoff, suitable field/background invariants below the associated strong-coupling scales, and controlled coefficients. The coefficient's mass dimension alone proves neither convergence nor validity on all backgrounds.",
+      "rubric": [
+        "Derive field dimension from a dimensionless action",
+        "Count all four derivatives and fields",
+        "Distinguish engineering from full scaling dimensions",
+        "Specify cutoff, background and coefficient assumptions"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "For the stated Gaussian normalization, \\([\\phi]=(d-2)/2\\) and \\([c_n]=d-n(d-2)/2\\); in four dimensions the four-field, four-derivative operator has coefficient \\(c_8/\\Lambda^4\\). Engineering counting alone does not establish interacting relevance or EFT validity.",
+            "proof": "A dimensionless action requires \\([\\mathcal L]=d\\), while \\([\\partial]=1\\). The kinetic term gives \\(2+2[\\phi]=d\\), hence \\([\\phi]=(d-2)/2\\). The coefficient of \\(\\phi^n\\) has dimension \\(d-n(d-2)/2\\). In four dimensions \\([\\phi]=1\\), each differentiated field has dimension two, and the displayed operator has dimension eight. Its coefficient can be written \\(c_8/\\Lambda^4\\) with dimensionless \\(c_8\\). This is engineering counting about a specified kinetic normalization and Gaussian scaling. At an interacting fixed point composite operators acquire anomalous dimensions and mix; their full scaling dimensions determine relevance. An EFT derivative expansion also needs external momenta below the cutoff, suitable field/background invariants below the associated strong-coupling scales, and controlled coefficients. The coefficient's mass dimension alone proves neither convergence nor validity on all backgrounds."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "Every scalar has engineering mass dimension zero in four dimensions, and engineering irrelevance implies irrelevance at every interacting fixed point.",
+            "proof": "In four dimensions every scalar has dimension zero, so the four-derivative operator has dimension four and is unsuppressed. Moreover any operator with a negative-dimension coefficient is irrelevant at every fixed point, regardless of anomalous dimensions, and the EFT remains controlled for arbitrarily rapid backgrounds."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    },
+    {
+      "id": "canonical-heat-capacity",
+      "family_id": "canonical-heat-capacity",
+      "title": "Thermal fluctuations and ensemble assumptions",
+      "topic": "statistical-mechanics",
+      "domain": "theoretical-physics",
+      "level": "graduate",
+      "kind": "derivation-and-boundary",
+      "prompt": "For a finite set of temperature-independent energy levels \\(E_n\\) in a canonical ensemble with \\(T>0\\), derive \\(C_V=\\operatorname{Var}(E)/(k_B T^2)\\). State the assumptions behind differentiating the partition function. Does this establish that every isolated gravitating system has nonnegative heat capacity? Explain the logical limitation without assuming equivalence of ensembles.",
+      "reference": "Let \\(\\beta=1/(k_BT)\\) and \\(Z=\\sum_n e^{-\\beta E_n}\\). The finite sum is positive and differentiable. With a temperature-independent Hamiltonian, \\(U=-\\partial_\\beta\\log Z\\) and \\(\\partial_\\beta U=-(\\langle E^2\\rangle-\\langle E\\rangle^2)\\). Since \\(d\\beta/dT=-1/(k_BT^2)\\), \\(C_V=\\operatorname{Var}(E)/(k_BT^2)\\ge0\\). The system parameters and volume are held fixed. For infinitely many levels, finiteness and differentiation under the sum need additional conditions. An isolated gravitating system is not automatically described by the canonical ensemble; long-range interactions can invalidate familiar ensemble-equivalence arguments. This derivation therefore supplies no universal sign theorem for microcanonical heat capacity. It neither constructs nor rules out a particular negative-heat-capacity gravitating model.",
+      "rubric": [
+        "Derive both beta derivatives",
+        "Keep the Hamiltonian and volume fixed",
+        "Justify differentiation for the stated finite spectrum",
+        "Do not infer ensemble equivalence for long-range systems"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "For a finite canonical spectrum independent of temperature, \\(C_V=\\operatorname{Var}(E)/(k_B T^2)\\ge0\\); this does not establish a universal sign for isolated microcanonical gravitating systems.",
+            "proof": "Let \\(\\beta=1/(k_BT)\\) and \\(Z=\\sum_n e^{-\\beta E_n}\\). The finite sum is positive and differentiable. With a temperature-independent Hamiltonian, \\(U=-\\partial_\\beta\\log Z\\) and \\(\\partial_\\beta U=-(\\langle E^2\\rangle-\\langle E\\rangle^2)\\). Since \\(d\\beta/dT=-1/(k_BT^2)\\), \\(C_V=\\operatorname{Var}(E)/(k_BT^2)\\ge0\\). The system parameters and volume are held fixed. For infinitely many levels, finiteness and differentiation under the sum need additional conditions. An isolated gravitating system is not automatically described by the canonical ensemble; long-range interactions can invalidate familiar ensemble-equivalence arguments. This derivation therefore supplies no universal sign theorem for microcanonical heat capacity. It neither constructs nor rules out a particular negative-heat-capacity gravitating model."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "Canonical variance identities prove that no isolated gravitating system can have negative heat capacity.",
+            "proof": "The variance identity applies to all physical systems in all ensembles because fluctuations are universal. Therefore negative heat capacity in an isolated gravitating system is mathematically impossible. No assumptions on temperature-dependent levels or convergence of the partition function are necessary."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    },
+    {
+      "id": "rg-flow-conventions",
+      "family_id": "rg-flow-conventions",
+      "title": "RG relevance depends on the flow convention",
+      "topic": "renormalization-group",
+      "domain": "theoretical-physics",
+      "level": "research",
+      "kind": "derivation-and-boundary",
+      "prompt": "Near a fixed point let dimensionless couplings satisfy \\(\\mu\\,d\\delta g/d\\mu=B\\delta g+O(\\lVert\\delta g\\rVert^2)\\), with \\(B\\) a constant diagonalizable matrix and a real eigenvalue \\(\\lambda\\). Derive the linearized evolution of its eigenmode, using a reference scale \\(\\mu_0\\). Which sign grows toward the infrared \\(\\mu\\to0\\)? Explain the limitation at \\(\\lambda=0\\), and give a one-coupling nonlinear example showing that a zero linear eigenvalue does not imply an exactly marginal direction.",
+      "reference": "With \\(s=\\log(\\mu/\\mu_0)\\), the eigenmode obeys \\(da/ds=\\lambda a\\), hence \\(a(\\mu)=a(\\mu_0)(\\mu/\\mu_0)^\\lambda\\) while the linear approximation is valid. Toward the infrared, a negative \\(\\lambda\\) makes a nonzero perturbation grow; a positive one decays. A growing mode eventually leaves the neighborhood where linearization controls the flow. For \\(\\lambda=0\\), nonlinear terms decide. For example \\(dg/ds=b g^2\\), with real \\(b\\ne0\\), integrates to \\(g(s)=g_0/(1-bg_0s)\\) on intervals where the denominator is nonzero. Nonzero small \\(g_0\\) runs even though the linear coefficient vanishes. The sign and side of the coupling affect the asymptotics; exact marginality requires vanishing beta function along an actual family, not merely a zero linear eigenvalue. Reversing the flow parameter changes sign conventions.",
+      "rubric": [
+        "Use log(mu/mu0) consistently",
+        "Determine infrared growth with the stated convention",
+        "Keep the neighborhood-of-validity qualification",
+        "Demonstrate running in a marginal linear direction"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "With \\(s=\\log(\\mu/\\mu_0)\\), a linear eigenmode scales as \\((\\mu/\\mu_0)^\\lambda\\); negative real \\(\\lambda\\) grows toward the infrared while linearization applies. A zero eigenvalue does not imply exact marginality.",
+            "proof": "With \\(s=\\log(\\mu/\\mu_0)\\), the eigenmode obeys \\(da/ds=\\lambda a\\), hence \\(a(\\mu)=a(\\mu_0)(\\mu/\\mu_0)^\\lambda\\) while the linear approximation is valid. Toward the infrared, a negative \\(\\lambda\\) makes a nonzero perturbation grow; a positive one decays. A growing mode eventually leaves the neighborhood where linearization controls the flow. For \\(\\lambda=0\\), nonlinear terms decide. For example \\(dg/ds=b g^2\\), with real \\(b\\ne0\\), integrates to \\(g(s)=g_0/(1-bg_0s)\\) on intervals where the denominator is nonzero. Nonzero small \\(g_0\\) runs even though the linear coefficient vanishes. The sign and side of the coupling affect the asymptotics; exact marginality requires vanishing beta function along an actual family, not merely a zero linear eigenvalue. Reversing the flow parameter changes sign conventions."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "A positive linear eigenvalue always grows toward the infrared, regardless of flow convention, and a zero eigenvalue guarantees exact marginality.",
+            "proof": "A positive eigenvalue always denotes an infrared-growing direction, independently of convention. If the eigenvalue vanishes, the coupling is exactly marginal, because quadratic and higher beta-function terms cannot change linear stability. Thus a zero eigenvalue alone proves a continuous family of fixed points."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    },
+    {
+      "id": "scalar-linear-instabilities",
+      "family_id": "scalar-linear-instabilities",
+      "title": "Ghost, gradient and mass instabilities are distinct",
+      "topic": "classical-field-theory",
+      "domain": "theoretical-physics",
+      "level": "research",
+      "kind": "derivation-and-boundary",
+      "prompt": "Consider a real scalar in Minkowski space with signature \\((+,-,-,-)\\), quadratic density \\(\\mathcal L=\\tfrac12\\dot\\phi^2-\\tfrac12c_s^2(\\nabla\\phi)^2-\\tfrac12m^2\\phi^2\\), and constant real parameters. Derive the dispersion relation and canonical energy. Classify the cases \\(c_s^2>0,m^2\\ge0\\), \\(c_s^2<0\\), and \\(c_s^2>0,m^2<0\\) at linear level. Explain why the sign of the time kinetic term, the EFT cutoff and zero-frequency modes must be treated separately.",
+      "reference": "The Euler-Lagrange equation is \\(\\ddot\\phi-c_s^2\\nabla^2\\phi+m^2\\phi=0\\). A Fourier mode gives \\(\\omega^2=c_s^2|\\mathbf k|^2+m^2\\). With \\(\\pi=\\dot\\phi\\), the Hamiltonian density is \\(\\tfrac12\\pi^2+\\tfrac12c_s^2(\\nabla\\phi)^2+\\tfrac12m^2\\phi^2\\). For positive \\(c_s^2\\) and nonnegative \\(m^2\\), this quadratic energy is nonnegative and Fourier frequencies have real squares; zero-frequency modes need separate boundary and growth analysis (the homogeneous massless mode can be affine in time). Negative \\(c_s^2\\) makes sufficiently high momenta exponentially unstable in the continuum theory, a gradient instability, but an EFT only describes momenta below its cutoff. For positive \\(c_s^2\\) and negative \\(m^2\\), sufficiently small momenta satisfy \\(|\\mathbf k|^2<-m^2/c_s^2\\) and have tachyonic exponential growth, provided these modes are allowed by the domain. A ghost concerns a wrong-sign time kinetic term; the specified Lagrangian has a positive one, so these spatial or mass instabilities do not themselves establish a ghost. Linear stability is not a proof of nonlinear or quantum stability.",
+      "rubric": [
+        "Derive the signs in the dispersion relation",
+        "Legendre transform the specified Lagrangian",
+        "Separate ghost, gradient and tachyonic mechanisms",
+        "Qualify mode ranges, cutoff, zero modes and nonlinear claims"
+      ],
+      "calibration": [
+        {
+          "label": "valid",
+          "solution": {
+            "answer": "Conditional derivation and limitations",
+            "claim": "The stated scalar has \\(\\omega^2=c_s^2|\\mathbf k|^2+m^2\\) and positive time kinetic term. Gradient and tachyonic instabilities occur in different mode ranges and neither by itself implies a ghost.",
+            "proof": "The Euler-Lagrange equation is \\(\\ddot\\phi-c_s^2\\nabla^2\\phi+m^2\\phi=0\\). A Fourier mode gives \\(\\omega^2=c_s^2|\\mathbf k|^2+m^2\\). With \\(\\pi=\\dot\\phi\\), the Hamiltonian density is \\(\\tfrac12\\pi^2+\\tfrac12c_s^2(\\nabla\\phi)^2+\\tfrac12m^2\\phi^2\\). For positive \\(c_s^2\\) and nonnegative \\(m^2\\), this quadratic energy is nonnegative and Fourier frequencies have real squares; zero-frequency modes need separate boundary and growth analysis (the homogeneous massless mode can be affine in time). Negative \\(c_s^2\\) makes sufficiently high momenta exponentially unstable in the continuum theory, a gradient instability, but an EFT only describes momenta below its cutoff. For positive \\(c_s^2\\) and negative \\(m^2\\), sufficiently small momenta satisfy \\(|\\mathbf k|^2<-m^2/c_s^2\\) and have tachyonic exponential growth, provided these modes are allowed by the domain. A ghost concerns a wrong-sign time kinetic term; the specified Lagrangian has a positive one, so these spatial or mass instabilities do not themselves establish a ghost. Linear stability is not a proof of nonlinear or quantum stability."
+          },
+          "explanation": "Authored reference candidate; independent expert review remains outstanding."
+        },
+        {
+          "label": "invalid",
+          "solution": {
+            "answer": "The proposed universal assertion holds",
+            "claim": "A positive time kinetic term rules out all gradient and tachyonic instabilities, and quadratic real frequencies imply nonlinear stability.",
+            "proof": "Negative mass squared is a ghost because every instability is a wrong-sign time kinetic term. Conversely a positive time kinetic term guarantees all Fourier modes oscillate regardless of the gradient coefficient. Real frequencies at quadratic order also prove nonlinear and quantum stability for arbitrary amplitudes."
+          },
+          "explanation": "Deliberate violation of an essential hypothesis or inference."
+        }
+      ]
+    }
+  ]
+}

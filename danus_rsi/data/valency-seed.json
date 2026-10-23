@@ -1,0 +1,238 @@
+{
+  "description": "Real Valency metadata retrieved during construction. Search hits are literature leads, not validated evidence or benchmark labels.",
+  "snapshots": [
+    {
+      "provider": "valency",
+      "retrieved_at": "2026-10-22",
+      "query": "Danus",
+      "tool": "search_by_title",
+      "server_version": "0.4.1",
+      "warnings": [
+        "No strong matches found. Consider semantic_search_papers for conceptual queries.",
+        "67% of results lack DOI. Use filter_papers_with_doi to restrict to papers with DOI identifiers."
+      ],
+      "papers": [
+        {
+          "id": "2607.06447v2",
+          "source": "arxiv",
+          "title": "Danus: Orchestrating Mathematical Reasoning Agents with Fact-Graph Memory",
+          "url": "https://arxiv.org/abs/2607.06447",
+          "doi": "",
+          "authors": [
+            "Jihao Liu",
+            "Guoxiong Gao",
+            "Zeming Sun",
+            "Bin Wu",
+            "Shurui Liu",
+            "Jiedong Jiang",
+            "Haocheng Ju",
+            "Leheng Chen",
+            "Ronnie Cheng",
+            "Xiping Zhang",
+            "Bin Dong"
+          ],
+          "categories": [
+            "cs.AI",
+            "cs.CL",
+            "cs.MA"
+          ]
+        }
+      ]
+    },
+    {
+      "provider": "valency",
+      "retrieved_at": "2026-10-22",
+      "query": "benchmark proof verification mathematical reasoning theoretical physics robust verifier evaluation self improvement",
+      "tool": "semantic_search_papers",
+      "server_version": "0.4.1",
+      "warnings": [
+        "Multiple similar results - top match may not be definitive",
+        "100% of results lack DOI. Use filter_papers_with_doi to restrict to papers with DOI identifiers."
+      ],
+      "papers": [
+        {
+          "id": "2510.13744v1",
+          "source": "arxiv",
+          "title": "Hard2Verify: A Step-Level Verification Benchmark for Open-Ended Frontier Math",
+          "url": "https://arxiv.org/abs/2510.13744",
+          "doi": "",
+          "authors": [
+            "Shrey Pandit",
+            "Austin Xu",
+            "Xuan-Phi Nguyen",
+            "Yifei Ming",
+            "Caiming Xiong",
+            "Shafiq Joty"
+          ],
+          "categories": [
+            "cs.AI",
+            "cs.CL",
+            "cs.LG"
+          ]
+        },
+        {
+          "id": "2607.11849v2",
+          "source": "arxiv",
+          "title": "AdvancedMathBench: A Benchmark Suite for Advanced Mathematical Proof Generation and Verification",
+          "url": "https://arxiv.org/abs/2607.11849",
+          "doi": "",
+          "authors": [
+            "Lingkai Kong",
+            "Zijian Wu",
+            "Yuzhe Gu",
+            "Haiteng Zhao",
+            "Zhouqi Hua",
+            "Wenyong Huang",
+            "Shuang Sun",
+            "Zhicheng Xiong",
+            "Xiaotian Zhang",
+            "Shuya Zhao",
+            "Yan Wang",
+            "Disheng Xu",
+            "Wenwei Zhang",
+            "Kai Chen"
+          ],
+          "categories": [
+            "cs.CL"
+          ]
+        },
+        {
+          "id": "2602.11570v1",
+          "source": "arxiv",
+          "title": "PRIME: A Process-Outcome Alignment Benchmark for Verifiable Reasoning in Mathematics and Engineering",
+          "url": "https://arxiv.org/abs/2602.11570",
+          "doi": "",
+          "authors": [
+            "Xiangfeng Wang",
+            "Hangyu Guo",
+            "Yanlin Lai",
+            "Mitt Huang",
+            "Liang Zhao",
+            "Chengyuan Yao",
+            "Yinmin Zhang",
+            "Qi Han",
+            "Xiaoxiao Ren",
+            "Chun Yuan",
+            "Tong Xu",
+            "Zheng Ge",
+            "Xiangyu Zhang",
+            "Daxin Jiang"
+          ],
+          "categories": [
+            "cs.CL"
+          ]
+        },
+        {
+          "id": "2507.09884v3",
+          "source": "arxiv",
+          "title": "VerifyBench: A Systematic Benchmark for Evaluating Reasoning Verifiers Across Domains",
+          "url": "https://arxiv.org/abs/2507.09884",
+          "doi": "",
+          "authors": [
+            "Xuzhao Li",
+            "Xuchen Li",
+            "Shiyu Hu",
+            "Yongzhen Guo",
+            "Wentao Zhang"
+          ],
+          "categories": [
+            "cs.AI"
+          ]
+        },
+        {
+          "id": "2603.26996v1",
+          "source": "arxiv",
+          "title": "FormalProofBench: Can Models Write Graduate Level Math Proofs That Are Formally Verified?",
+          "url": "https://arxiv.org/abs/2603.26996",
+          "doi": "",
+          "authors": [
+            "Nikil Ravi",
+            "Kexing Ying",
+            "Vasilii Nesterov",
+            "Rayan Krishnan",
+            "Elif Uskuplu",
+            "Bingyu Xia",
+            "Janitha Aswedige",
+            "Langston Nashold"
+          ],
+          "categories": [
+            "cs.AI",
+            "cs.CL",
+            "cs.LG",
+            "cs.PL"
+          ]
+        }
+      ]
+    },
+    {
+      "provider": "valency",
+      "retrieved_at": "2026-10-22",
+      "query": "theoretical physics derivation benchmark dimensional analysis effective field theory consistency reasoning verification",
+      "tool": "semantic_search_papers",
+      "server_version": "0.4.1",
+      "warnings": [
+        "Multiple similar results - top match may not be definitive"
+      ],
+      "papers": [
+        {
+          "id": "1105.3178v1",
+          "source": "arxiv",
+          "title": "Naive Dimensional Analysis and Irrelevant Operators",
+          "url": "https://arxiv.org/abs/1105.3178",
+          "doi": "",
+          "authors": [
+            "Matti Antola",
+            "Kimmo Tuominen"
+          ],
+          "categories": [
+            "hep-ph"
+          ]
+        },
+        {
+          "id": "hep-ph/9207278v1",
+          "source": "arxiv",
+          "title": "Generalized Dimensional Analysis",
+          "url": "https://arxiv.org/abs/hep-ph/9207278",
+          "doi": "10.1016/0370-2693(93)91728-6",
+          "authors": [
+            "Howard Georgi"
+          ],
+          "categories": [
+            "hep-ph"
+          ]
+        },
+        {
+          "id": "1601.07551v2",
+          "source": "arxiv",
+          "title": "Analysis of General Power Counting Rules in Effective Field Theory",
+          "url": "https://arxiv.org/abs/1601.07551",
+          "doi": "10.1140/epjc/s10052-016-4332-1",
+          "authors": [
+            "M.B. Gavela",
+            "E.E. Jenkins",
+            "A.V. Manohar",
+            "L. Merlo"
+          ],
+          "categories": [
+            "hep-ph"
+          ]
+        },
+        {
+          "id": "1211.0634v1",
+          "source": "arxiv",
+          "title": "Effective Field Theories and the Role of Consistency in Theory Choice",
+          "url": "https://arxiv.org/abs/1211.0634",
+          "doi": "",
+          "authors": [
+            "James D. Wells"
+          ],
+          "categories": [
+            "physics.hist-ph",
+            "hep-ph",
+            "hep-th"
+          ]
+        }
+      ]
+    }
+  ]
+}
