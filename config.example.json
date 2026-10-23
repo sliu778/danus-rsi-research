@@ -1,7 +1,7 @@
 {
   "model": "gpt-6-astra",
   "effort": "xhigh",
-  "workers": 3,
+  "workers": 1,
   "max_calls": 160,
   "deadline_seconds": 14400,
   "call_timeout_seconds": 600,

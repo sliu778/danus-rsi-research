@@ -10,7 +10,7 @@ from pathlib import Path
 DATA = Path(__file__).parent / "data"
 DOMAINS = {"mathematics", "theoretical-physics"}
 ROLES = ("correctness", "adversarial", "completeness")
-FROZEN_PROTOCOL = "danus-rsi-panel-v1"
+FROZEN_PROTOCOL = "danus-rsi-panel-v2"  # v2: placeholder reference concerns ("None.") count as no concern
 SOLVER_PROTOCOL = "danus-rsi-solver-v2"  # v2: strict accepts counted over k attempts per problem
 # Fields each arm's optimizer may change; everything else must be identical to the parent.
 ARM_FIELDS = {"verifier": {"name", "verifier_guidance", "rationale"},

@@ -49,16 +49,9 @@ bash scripts/run.sh benchmark --limit 2 --max-calls 10 --state "$STATE"
 
 This exercises the whole live path once: solver session, native verifier, three judges, report. Read `reports/<run>/report.html` and the `calls/` evidence before spending more. Infrastructure errors here are configuration problems, not mathematics.
 
-**Known issue: concurrent judge sessions.** In the first live smoke run (2026-10-23), both solver calls and both native verifications succeeded, but all six judge calls failed. Judges run three at a time, and each judge's Codex session logged `failed to refresh available models: request timed out`, retried five times, and ended with `workspace routing discovery failed` after about 170 seconds. Sequential calls before and between the judge rounds succeeded, which points at concurrent session start-up. A rerun the same day with one judge at a time completed all ten calls without a single routing failure, so run the panel sequentially:
+**Resolved: concurrent judge sessions.** In the first live smoke run (2026-10-23), both solver calls and both native verifications succeeded, but all six judge calls failed. Judges then ran three at a time, and each judge's Codex session logged `failed to refresh available models: request timed out`, retried five times, and ended with `workspace routing discovery failed` after about 170 seconds. A rerun the same day with one judge at a time completed all ten calls without a single routing failure, so one judge at a time (`workers: 1`) is now the default. Raising `workers` through `--config` brings the concurrency back; do it only after a sequential run works on your machine. Calls that fail this way are charged and recorded as infrastructure errors, so `--retry-errors` on the same run needs budget beyond the original `--max-calls`.
 
-```bash
-echo '{"workers": 1}' > ~/danus-rsi-sequential.json
-bash scripts/run.sh benchmark --limit 2 --max-calls 10 --config ~/danus-rsi-sequential.json --state "$STATE"
-```
-
-Calls failed this way are charged and recorded as infrastructure errors, so `--retry-errors` on the same run needs budget beyond the original `--max-calls`.
-
-**Known issue: "None." as a reference concern.** In that sequential rerun, both candidate proofs received three `correct` votes with perfect scores and a native `correct`, yet both were recorded as abstentions: three of the six judges wrote the literal text `None.` in `reference_concern`, and any non-empty concern forces abstention. Until the protocol treats such placeholders as no concern, read the judges' `reference_concern` values in `report.json` before interpreting an abstention.
+**Resolved: "None." as a reference concern.** In that sequential rerun, both candidate proofs received three `correct` votes with perfect scores and a native `correct`, yet both were recorded as abstentions: three of the six judges wrote the literal text `None.` in `reference_concern`, and protocol v1 read any non-empty text as a concern. Protocol `danus-rsi-panel-v2` asks judges to leave the field empty and treats a closed list of placeholders as no concern; any other text still forces abstention. Results recorded under v1 keep their v1 decisions.
 
 **Keep the machine awake.** In the same rerun one native verification spanned 46 minutes of wall time but only 252 seconds of the process's monotonic clock, which is consistent with the computer sleeping mid-call. Long runs survive this, because budgets and leases use wall-clock deadlines, but they take longer than their calls.
 

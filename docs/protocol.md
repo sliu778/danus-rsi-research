@@ -36,6 +36,8 @@ $$
 
 This score cannot override the logical acceptance gate. An acceptance needs all three judges to report correctness score 4, completeness and rigor at least 3, no errors/gaps/reference concerns, and a consistent native `correct` verdict. A rejection needs three explicit negative judgments with concrete defects. Dissent, uncertain verdicts, low positive scores, unresolved references, or a positive panel conflicting with a negative native check lead to abstention. Invalid schemas, contradictory native results and failed calls are infrastructure errors.
 
+Judges are asked to leave `reference_concern` empty when they have no concern. Since protocol `danus-rsi-panel-v2`, a short closed list of placeholders (`None`, `N/A`, `No concerns`, a dash, and close variants, ignoring case, quotes and trailing punctuation) also counts as no concern. Any other text, including `None, but ...`, is a concern and still forces abstention. Under v1, the first live run recorded two unanimously supported candidates as abstentions because judges wrote `None.`. The judges run one at a time by default (`workers: 1`, at most 3), after the first live run's concurrent judge sessions all failed to connect.
+
 The native service verifies a submitted claim and proof; panel judges additionally check that these answer the original question. A claim proving something unrelated is insufficient. Native checking is informal model verification, not a proof kernel.
 
 ## Metrics and promotion

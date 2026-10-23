@@ -15,7 +15,7 @@ from .protocol import (DATA, DOMAINS, FROZEN_PROTOCOL, ROLES, SOLVER_PROTOCOL, P
 from .store import BudgetExceeded
 from .valency import import_snapshot, paper_domains
 
-DEFAULT_CONFIG = {"model": "gpt-6-astra", "effort": "xhigh", "workers": 3,
+DEFAULT_CONFIG = {"model": "gpt-6-astra", "effort": "xhigh", "workers": 1,
                   "max_calls": 160, "deadline_seconds": 14400,
                   "call_timeout_seconds": 600, "verify_timeout_seconds": 960,
                   "verify_url": "http://127.0.0.1:8091/verify"}
@@ -76,7 +76,7 @@ def decision_from(judgments, native):
     if native["status"] != "ok" or any(j["status"] != "ok" for j in judgments):
         return "error"
     data = [j["data"] for j in judgments]
-    if any(j["reference_concern"].strip() or j["verdict"] == "uncertain" for j in data):
+    if any(t.has_reference_concern(j["reference_concern"]) or j["verdict"] == "uncertain" for j in data):
         return "abstain"
     if len({j["verdict"] for j in data}) != 1:
         return "abstain"

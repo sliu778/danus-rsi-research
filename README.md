@@ -2,7 +2,7 @@
 
 A bounded research-agent system for graduate mathematics and theoretical physics, built on [Danus](https://github.com/frenzymath/Danus) and the preceding Danus Math Panel benchmark. It runs research workflows, measures proposed verifier strategies, and maintains an auditable history of experiments.
 
-**Status: experimental infrastructure, version 0.4.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
+**Status: experimental infrastructure, version 0.5.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
 
 ## What runs
 
@@ -36,7 +36,7 @@ flowchart TD
   T --> U[Rollback to a previous active version]
 ```
 
-The software schedules role dependencies and runs the three judge sessions concurrently. Every role has a fresh session and a narrow structured output. Agents reason in text and LaTeX; mathematical computation, browsing, shell execution, and subagent tools are disabled in the candidate/judge CLI sessions. Valency retrieval occurs through the orchestrator's separate adapter.
+The software schedules role dependencies and runs the three judge sessions one at a time by default; `workers` (at most 3) runs them concurrently. Every role has a fresh session and a narrow structured output. Agents reason in text and LaTeX; mathematical computation, browsing, shell execution, and subagent tools are disabled in the candidate/judge CLI sessions. Valency retrieval occurs through the orchestrator's separate adapter.
 
 RSI here means recursive revision of three things, each through its own gate:
 
