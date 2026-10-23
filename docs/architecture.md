@@ -5,13 +5,14 @@ The orchestration layer is an explicit bounded workflow over the existing Danus 
 | Component | Responsibility |
 |---|---|
 | `cli.py` | Explicit commands, configuration, state selection, campaign rounds and arm alternation |
-| `engine.py` | Dependencies, concurrent judges, research stages, verifier and solver development cycles, paired audits, mining |
+| `engine.py` | Dependencies, the judge panel (sequential by default), research stages, verifier and solver development cycles, paired audits, mining |
 | `agents.py` | Role prompts, structured responses, subscription transport and scripted fixtures |
 | `transport.py` | Adapted Math Panel isolation, Codex event audit, rubric, native HTTP checks |
 | `protocol.py` | Validation, split checks, deterministic metrics, frozen verifier and solver gates, arm field locks |
 | `store.py` | Transactions, persistent budgets, worker leases, immutable artifacts, lineage, shared audit registry |
 | `valency.py` | Scholarly search/import with provenance through Valency MCP; mining eligibility by date and category |
 | `bridge.py` | Danus handoff through `danus assign`; read-only tracing of native verifier outcomes |
+| `doctor.py` | Read-only live-readiness checks, each failure with its fix |
 | `report.py` | Escaped HTML/Markdown summaries and local full JSON evidence |
 
 ## The loop
