@@ -15,33 +15,42 @@ Python 3.11+ and the standard library are sufficient for state management, offli
 
 The installed Danus environment inspected for this build uses Python 3.14.4, Codex CLI 0.163.0, MCP 2.3.0 and httpx2 2.16.0. These are observed versions, not a promise that arbitrary future versions preserve the same contracts. The optional dependency range is not a complete lockfile. Core tests also run on Windows Python 3.12; CI exercises Python 3.11 and 3.12 on Linux and Windows.
 
-## Existing workstation
+## Danus installation layouts
 
-The original runtime is `/opt/danus` inside WSL distribution `Danus`, user `danus`. The new project checkout is separate from that runtime:
+The project checkout is always separate from the Danus runtime. Two layouts are supported:
+
+| Layout | Where Danus lives | How to point at it |
+|---|---|---|
+| Dedicated runtime | `/opt/danus` in a Linux or WSL distribution | Default; nothing to set |
+| Windows-folder install used through WSL | A Windows folder, seen in WSL as `/mnt/c/...` | `export DANUS_ROOT=/mnt/c/Users/<you>/.../Danus` |
+
+The live runs recorded in [validation](validation.md) used the second layout: WSL distribution `Ubuntu`, with `DANUS_ROOT` set to the Danus folder next to this checkout. From Windows:
 
 ```powershell
-wsl -d Danus -u danus
+wsl -d Ubuntu
 ```
 
-Then in the Linux shell:
+Then in the Linux shell, with your own paths:
 
 ```bash
-cd /mnt/c/Users/Simo-/Documents/Codex/2026-10-20/i/outputs/danus-rsi-research
-bash scripts/run.sh demo --cycles 2 --limit 4
+cd /mnt/c/Users/<you>/.../danus-rsi-research
+export DANUS_ROOT=/mnt/c/Users/<you>/.../Danus
+bash scripts/run.sh doctor --state ~/danus-rsi-state
 ```
 
-`scripts/run.sh` sources `/opt/danus/scripts/env.sh` and uses `/opt/danus/runtime/venv/bin/python` when that installation exists. Set `DANUS_ROOT` for another location. Without an existing installation it uses `PYTHON_BIN`, or `python3`, for core commands; it does not install or alter Danus automatically.
+`scripts/run.sh` sources `$DANUS_ROOT/scripts/env.sh` (default `/opt/danus`) and uses `$DANUS_ROOT/runtime/venv/bin/python` when that installation exists. `bash scripts/run.sh doctor` reports every live prerequisite in one read-only pass. [The live runbook](live-runbook.md) goes from there to a first result. Without an existing installation it uses `PYTHON_BIN`, or `python3`, for core commands; it does not install or alter Danus automatically.
 
 To inspect the existing live prerequisites:
 
 ```bash
-source /opt/danus/scripts/env.sh
-python -c 'from danus import codex; print(codex.resolve_bin())'
-/opt/danus/bin/codex login status
+bash scripts/run.sh doctor --state ~/danus-rsi-state     # all checks in one read-only pass
+# or by hand:
+source "$DANUS_ROOT/scripts/env.sh"
+"$DANUS_ROOT/bin/codex" login status
 curl --fail http://127.0.0.1:8091/health
 ```
 
-If needed, sign in with `/opt/danus/bin/codex login --device-auth`, then start the verifier using `(cd /opt/danus && bash scripts/services.sh up verify)`. Subscription sign-in was not repeated as part of this build, and no live model run was requested. A connection in the desktop application does not by itself authenticate the separate Danus runtime.
+If needed, sign in with `"$DANUS_ROOT/bin/codex" login --device-auth` in your own terminal, then start the verifier using `(cd "$DANUS_ROOT" && bash scripts/services.sh up verify)`. A connection in the desktop application does not by itself authenticate the separate Danus runtime.
 
 The script imports the existing runtime environment; live preflight checks that `CODEX_BACKEND=chatgpt`, confirms the CLI login reports ChatGPT, and verifies that the HTTP health PID matches the deployment's `runtime/run/verify.pid`. Inherited API-key variables are removed from candidate/judge subprocess environments. The native service uses its own existing environment; its expected model is recorded, but the service does not expose independently verifiable model identity.
 

@@ -172,6 +172,7 @@ def judge_prompt(task, solution, focus, blinded=True):
         "is a true but irrelevant statement. The reference is an authored guide, not "
         "infallible ground truth; accept different valid proofs and flag an erroneous "
         "reference in reference_concern. An unresolved concern requires uncertain. "
+        "Leave reference_concern as an empty string when you have no concern; never write None or N/A there. "
         "Score each dimension 0 (absent/wrong), 1 (major defects), 2 (partial), "
         "3 (minor limitations), 4 (fully satisfactory). A correct verdict requires "
         "correctness=4, no critical_errors, and no gaps. List precise locations and "
@@ -179,9 +180,18 @@ def judge_prompt(task, solution, focus, blinded=True):
         canonical({"task": task["prompt"], "reference": task["reference"], "rubric": task["rubric"], "candidate": solution})
     )
 
+# What judges write when they mean "no concern". A closed list: anything else,
+# including "None, but ...", is a concern and still forces abstention.
+NO_CONCERN = {"none", "no", "n/a", "na", "nil", "null", "-", "--", "–", "—", "not applicable", "no issue", "no issues",
+              "no concern", "no concerns", "none noted", "none identified", "no reference concern", "no reference concerns"}
+
+def has_reference_concern(text):
+    normalized = re.sub(r"\s+", " ", text).strip().strip("\"'`()[]").strip().rstrip(".!;:").strip().casefold()
+    return bool(normalized) and normalized not in NO_CONCERN
+
 def judge_pass(j):
     return (j["verdict"] == "correct" and not j["critical_errors"] and not j["gaps"]
-            and not j["reference_concern"].strip() and j["scores"]["correctness"] == 4
+            and not has_reference_concern(j["reference_concern"]) and j["scores"]["correctness"] == 4
             and j["scores"]["completeness"] >= 3 and j["scores"]["rigor"] >= 3)
 
 def aggregate(judgments, native):
@@ -189,7 +199,7 @@ def aggregate(judgments, native):
     complete = len(valid) == 3
     votes = [j["verdict"] for j in valid]
     disagreement = len(set(votes)) > 1
-    reference_concern = any(j["reference_concern"].strip() for j in valid)
+    reference_concern = any(has_reference_concern(j["reference_concern"]) for j in valid)
     needs_review = disagreement or reference_concern or "uncertain" in votes
     panel_pass = complete and all(judge_pass(j) for j in valid)
     native_ok = native["status"] == "ok"

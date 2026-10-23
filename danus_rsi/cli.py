@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from . import bridge
+from . import bridge, doctor
 from .agents import LiveAgents, ScriptedAgents
 from .engine import DEFAULT_CONFIG, Engine, code_hash, initialize, load_suite, validate_config
 from .protocol import digest, read_json, require, save_json, validate_suite
@@ -30,6 +30,7 @@ def parser():
             q.add_argument("--resume", help="resume a non-audit run with an identical manifest")
             q.add_argument("--retry-errors", action="store_true", help="retry cached transport errors once within the original budget")
             q.add_argument("--policy", help="policy artifact ID; defaults to the active version")
+            q.add_argument("--estimate", action="store_true", help="print the upper bound of calls this command reserves; start nothing")
         return q
     command("init", "initialize state, development data and Valency seed records")
     command("status", "show runs, policies, drafts and event integrity")
@@ -88,7 +89,109 @@ def parser():
     curriculum.add_argument("file", type=Path)
     report = command("report", "regenerate a local report")
     report.add_argument("run_id")
+    doctor = command("doctor", "check live-run readiness: Linux, Danus, login, verifier (read-only)")
+    doctor.add_argument("--config", type=Path)
+    template = command("audit-template", "write a private audit worksheet for a reviewer to fill in")
+    template.add_argument("--arm", choices=["verifier", "solver"], required=True)
+    template.add_argument("--out", type=Path, required=True, help="a path outside this repository")
+    check = command("audit-check", "validate a private audit file and check freshness without consuming it")
+    check.add_argument("file", type=Path)
     return p
+
+
+RESEARCH_ROUND_MAX = 2 + 3 * 7  # curator, planner, then <= 3 x (researcher, critic, repair, native, 3 judges)
+
+
+def estimate(args, suite, papers, audit, config):
+    """Upper bound on reserved calls, computed from the same selections the engine uses."""
+    from .engine import balanced_selection
+    from .protocol import calibration_cases
+    limit, samples = getattr(args, "limit", None), getattr(args, "samples", 1)
+    verifier_cycle = lambda: 8 * len(balanced_selection(calibration_cases(suite), limit)) + 1
+    solver_cycle = lambda: 10 * samples * len(balanced_selection(suite["tasks"], limit)) + 1
+    parts = []
+    if args.command in ("demo", "run"):
+        for n in range(args.cycles):
+            arm = args.arm if args.arm != "alternate" else ("verifier", "solver")[n % 2]
+            parts.append((f"round {n + 1} research, at most", RESEARCH_ROUND_MAX))
+            parts.append((f"round {n + 1} {arm} cycle", solver_cycle() if arm == "solver" else verifier_cycle()))
+        if args.command == "demo" and papers:
+            parts.append(("mining batch", 1))
+    elif args.command == "benchmark":
+        parts.append(("benchmark problems x 5 calls", 5 * len(balanced_selection(suite["tasks"], limit))))
+    elif args.command == "improve":
+        cycle = solver_cycle if args.arm == "solver" else verifier_cycle
+        parts += [(f"{args.arm} cycle {c + 1}", cycle()) for c in range(args.cycles)]
+    elif args.command == "mine":
+        # Before a --query search the paper count is unknown, so every batch may run.
+        parts.append(("mining batches", min(args.batches, -(-len(papers) // args.batch_size)) if papers else args.batches))
+    elif audit.get("split") == "solver-audit":
+        parts.append((f"solver audit: problems x {samples} sample(s) x 10", 10 * samples * len(audit.get("tasks", []))))
+    else:
+        parts.append(("verifier audit: (cases + regression) x 8", 8 * (len(audit.get("cases", [])) + len(calibration_cases(suite)))))
+    total = sum(calls for _, calls in parts)
+    return {"estimate": True, "command": args.command, "upper_bound_calls": total, "max_calls": config["max_calls"],
+            "fits": total <= config["max_calls"], "breakdown": [{"step": s, "calls": c} for s, c in parts],
+            "note": "Upper bound on reserved interface calls, not tokens or money. No run was started."}
+
+
+def audit_template(arm, out):
+    """A worksheet that cannot pass validation until a reviewer completes and signs it."""
+    root = Path(__file__).resolve().parents[1]
+    target = Path(out).resolve()
+    require(not target.is_relative_to(root) or target.is_relative_to(root / ".state"),
+            "keep private audit files outside this repository (or under its git-ignored .state/)")
+    require(not target.exists(), "refusing to overwrite an existing file")
+    def task(domain, n):
+        return {"id": f"REPLACE-{domain}-{n}", "family_id": "REPLACE-stable-family-of-the-underlying-result", "title": "REPLACE",
+                "domain": domain, "prompt": "REPLACE: precisely stated question with every hypothesis and convention",
+                "reference": "REPLACE: independently checked argument", "rubric": ["REPLACE: checkable condition"]}
+    common = {"id": "REPLACE-unique-batch-id", "review_status": "template-unreviewed", "reviewer": "",
+              "provenance": "", "instructions": "Fill every REPLACE field, delete this key if you like, then set "
+              "review_status to independently-reviewed and name the reviewer. Problems must never have been shown to "
+              "this system: run audit-check before using the file. A batch is consumed on first use, even if interrupted."}
+    if arm == "solver":
+        body = dict(common, split="solver-audit", requirements="at least 12 problems, 8 families, 5 per domain; no candidate proofs",
+                    tasks=[task("mathematics", 1), task("theoretical-physics", 1)])
+    else:
+        solution = {"answer": "REPLACE", "claim": "REPLACE: exact claim", "proof": "REPLACE: candidate proof, valid or deliberately flawed"}
+        body = dict(common, split="audit", requirements="at least 20 cases, 10 families, 5 valid and 5 invalid per domain",
+                    cases=[{"id": f"REPLACE-case-{d}", "label": "valid or invalid", "task": task(d, 1), "solution": solution}
+                           for d in ("mathematics", "theoretical-physics")])
+    save_json(target, body)
+    return {"template": str(target), "arm": arm, "requirements": body["requirements"]}
+
+
+def audit_check(store, suite, path):
+    """Validation, exposure and freshness only. Reserves nothing and prints no case content."""
+    from .engine import exposed_tasks
+    from .protocol import ProtocolError, calibration_cases, validate_audit, validate_solver_audit
+    audit = read_json(path)
+    split = audit.get("split")
+    require(split in ("audit", "solver-audit"), "expected split audit or solver-audit")
+    solver = split == "solver-audit"
+    result = {"file": str(path), "arm": "solver" if solver else "verifier"}
+    try:
+        (validate_solver_audit if solver else validate_audit)(audit, exposed_tasks(store, suite))
+        result.update(valid=True, problem=None)
+    except (ProtocolError, KeyError, TypeError, AttributeError) as exc:
+        result.update(valid=False, problem=f"{type(exc).__name__}: {exc}")
+    entries = audit.get("tasks", []) if solver else audit.get("cases", [])
+    counts = {}
+    for entry in entries:
+        task = entry if solver else entry.get("task", {})
+        key = task.get("domain", "?") if solver else f"{task.get('domain', '?')}/{entry.get('label', '?')}"
+        counts[key] = counts.get(key, 0) + 1
+    result.update(entries=len(entries), counts=counts,
+                  families=len({(e if solver else e.get("task", {})).get("family_id") for e in entries}))
+    try:
+        result.update(store.audit_status(audit))
+    except (KeyError, TypeError, AttributeError):
+        result.update(batch_consumed=None, consumed_problem_keys=None)
+    result["fresh"] = bool(result["valid"] and result["batch_consumed"] is False and result["consumed_problem_keys"] == 0)
+    result["calls_per_sample" if solver else "calls"] = 10 * len(entries) if solver else 8 * (len(entries) + len(calibration_cases(suite)))
+    result["note"] = "Read-only: nothing was reserved or exposed, and no case content is printed."
+    return result
 
 
 def effective_suite(store):
@@ -164,6 +267,17 @@ def execute(args):
         return bridge.assign(store, args.finding, args.target, args.danus_root, args.confirm, args.allow_unresolved)
     if args.command == "handoff-sync":
         return bridge.sync(store, args.danus_root)
+    if args.command == "audit-template":
+        return audit_template(args.arm, args.out)
+    if args.command == "audit-check":
+        return audit_check(store, effective_suite(store), args.file)
+    if args.command == "doctor":
+        config = dict(DEFAULT_CONFIG)
+        if args.config:
+            override = read_json(args.config)
+            require(set(override) <= set(config), "unknown configuration field")
+            config.update(override)
+        return doctor.diagnose(validate_config(config), store.directory)
     config = dict(DEFAULT_CONFIG)
     if args.config:
         override = read_json(args.config)
@@ -183,20 +297,24 @@ def execute(args):
     store.get(policy, "policy")
     if args.command == "audit":
         require(args.resume is None, "audit batches are single-use; interrupted audits need a fresh batch")
-    if args.command == "run" and args.refresh_literature:
+    # An estimate touches nothing external: no literature search, no backend, no run.
+    if args.command == "run" and args.refresh_literature and not args.estimate:
         import_snapshot(store, search(args.objective, 10))
-    if args.command == "mine" and args.query:
+    if args.command == "mine" and args.query and not args.estimate:
         import_snapshot(store, search(args.query, 20))
     papers = None
     if args.command in ("mine", "demo"):
         papers = eligible_papers([p["body"] for p in store.artifacts("paper")], getattr(args, "since", DEMO_MINING_SINCE))
         # Fail before reserving a run: nothing to mine is an input problem, not a model failure.
-        require(bool(papers) or args.command == "demo", "no dated math/physics Valency records on or after --since; import a recent connector export first")
-    backend = ScriptedAgents() if args.command == "demo" else LiveAgents(config)
-    engine = Engine(store, backend, config, args.retry_errors)
+        require(bool(papers) or args.command == "demo" or (args.estimate and args.query),
+                "no dated math/physics Valency records on or after --since; import a recent connector export first")
     audit = read_json(args.file) if args.command == "audit" else None
     if audit is not None and audit.get("split") != "solver-audit":
         require(args.samples == 1, "--samples applies to solver audits; verifier audit cases are fixed candidates")
+    if args.estimate:
+        return estimate(args, suite, papers, audit, config)
+    backend = ScriptedAgents() if args.command == "demo" else LiveAgents(config)
+    engine = Engine(store, backend, config, args.retry_errors)
     payload = {"suite": digest(suite), "policy": policy, "limit": getattr(args, "limit", None),
                "cycles": getattr(args, "cycles", None), "objective": getattr(args, "objective", None),
                "domain": getattr(args, "domain", None), "candidate": getattr(args, "candidate", None),

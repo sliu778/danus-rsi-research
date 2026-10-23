@@ -5,13 +5,14 @@ The orchestration layer is an explicit bounded workflow over the existing Danus 
 | Component | Responsibility |
 |---|---|
 | `cli.py` | Explicit commands, configuration, state selection, campaign rounds and arm alternation |
-| `engine.py` | Dependencies, concurrent judges, research stages, verifier and solver development cycles, paired audits, mining |
+| `engine.py` | Dependencies, the judge panel (sequential by default), research stages, verifier and solver development cycles, paired audits, mining |
 | `agents.py` | Role prompts, structured responses, subscription transport and scripted fixtures |
 | `transport.py` | Adapted Math Panel isolation, Codex event audit, rubric, native HTTP checks |
 | `protocol.py` | Validation, split checks, deterministic metrics, frozen verifier and solver gates, arm field locks |
 | `store.py` | Transactions, persistent budgets, worker leases, immutable artifacts, lineage, shared audit registry |
 | `valency.py` | Scholarly search/import with provenance through Valency MCP; mining eligibility by date and category |
 | `bridge.py` | Danus handoff through `danus assign`; read-only tracing of native verifier outcomes |
+| `doctor.py` | Read-only live-readiness checks, each failure with its fix |
 | `report.py` | Escaped HTML/Markdown summaries and local full JSON evidence |
 
 ## The loop
@@ -34,7 +35,7 @@ Benchmark growth, verifier quality and solver quality feed each other only throu
 
 ## Scheduling
 
-A research round has a curator, planner, and one to three subproblems. Each subproblem has a researcher, critic, at most one revision, a native verification request and three judge sessions. Subproblems execute in deterministic order; panel sessions run in a bounded thread pool. A development cycle evaluates the current policy, asks an optimizer for one revision, evaluates that revision on the same examples, then selects a branch using the frozen development gate. A verifier cycle re-judges fixed labeled candidates; a solver cycle generates fresh attempts and judges them under unchanged verifier guidance. `run --arm alternate` (the demo default) alternates the two arms across rounds, so each round changes only one side.
+A research round has a curator, planner, and one to three subproblems. Each subproblem has a researcher, critic, at most one revision, a native verification request and three judge sessions. Subproblems execute in deterministic order; panel sessions run in a thread pool of `workers` sessions, one at a time by default. A development cycle evaluates the current policy, asks an optimizer for one revision, evaluates that revision on the same examples, then selects a branch using the frozen development gate. A verifier cycle re-judges fixed labeled candidates; a solver cycle generates fresh attempts and judges them under unchanged verifier guidance. `run --arm alternate` (the demo default) alternates the two arms across rounds, so each round changes only one side.
 
 The campaign passes the status and evidence IDs of prior findings into later planning, together with any Danus facts from the latest `handoff-sync`. A model-supported finding remains a proposal, not an established fact; only a fact in the Danus graph is labeled as verified. The reference-free research path explicitly asks judges to check missing dependencies. New task references remain quarantined.
 

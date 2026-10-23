@@ -15,7 +15,7 @@ from .protocol import (DATA, DOMAINS, FROZEN_PROTOCOL, ROLES, SOLVER_PROTOCOL, P
 from .store import BudgetExceeded
 from .valency import import_snapshot, paper_domains
 
-DEFAULT_CONFIG = {"model": "gpt-6-astra", "effort": "xhigh", "workers": 3,
+DEFAULT_CONFIG = {"model": "gpt-6-astra", "effort": "xhigh", "workers": 1,
                   "max_calls": 160, "deadline_seconds": 14400,
                   "call_timeout_seconds": 600, "verify_timeout_seconds": 960,
                   "verify_url": "http://127.0.0.1:8091/verify"}
@@ -76,7 +76,7 @@ def decision_from(judgments, native):
     if native["status"] != "ok" or any(j["status"] != "ok" for j in judgments):
         return "error"
     data = [j["data"] for j in judgments]
-    if any(j["reference_concern"].strip() or j["verdict"] == "uncertain" for j in data):
+    if any(t.has_reference_concern(j["reference_concern"]) or j["verdict"] == "uncertain" for j in data):
         return "abstain"
     if len({j["verdict"] for j in data}) != 1:
         return "abstain"
@@ -87,6 +87,14 @@ def decision_from(judgments, native):
     if all(j["verdict"] == "incorrect" and (j["critical_errors"] or j["gaps"]) for j in data):
         return "reject"
     return "abstain"
+
+
+def exposed_tasks(store, suite):
+    """Every problem statement a model or optimizer has already seen."""
+    exposed = suite["tasks"] + [x["body"] for x in store.artifacts("exposed_task")]
+    exposed += [t for s in store.artifacts("development_suite") for t in s["body"]["tasks"]]
+    exposed += [x["body"]["task"] for x in store.artifacts("benchmark_draft")]
+    return exposed
 
 
 REDACTED = "[withheld: overlaps the reference answer]"
@@ -212,11 +220,7 @@ class Engine:
         return {"kind": "benchmark", "policy": policy_id, "rows": rows}
 
     def exposures(self, suite):
-        """Every problem statement a model or optimizer has already seen."""
-        exposed = suite["tasks"] + [x["body"] for x in self.store.artifacts("exposed_task")]
-        exposed += [t for s in self.store.artifacts("development_suite") for t in s["body"]["tasks"]]
-        exposed += [x["body"]["task"] for x in self.store.artifacts("benchmark_draft")]
-        return exposed
+        return exposed_tasks(self.store, suite)
 
     def research(self, objective, domain, policy_id, prefix="research", memory=None):
         require(domain in DOMAINS, "unsupported research domain")
