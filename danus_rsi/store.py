@@ -180,8 +180,11 @@ class Store:
         """One use even after interruption. Re-labeling/re-naming cannot reuse cases."""
         from .protocol import statement_key
         fingerprint = digest(audit)
-        keys = {"statement:" + statement_key(c["task"]["prompt"]) for c in audit["cases"]}
-        keys |= {"family:" + digest(c["task"]["family_id"]) for c in audit["cases"]}
+        # Verifier audits carry labeled cases; solver audits carry bare tasks. Both
+        # consume the same registry, so a problem is never fresh for either arm twice.
+        tasks = [c["task"] for c in audit.get("cases", [])] + audit.get("tasks", [])
+        keys = {"statement:" + statement_key(t["prompt"]) for t in tasks}
+        keys |= {"family:" + digest(t["family_id"]) for t in tasks}
         with self.transaction() as db:
             require(db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?", (audit["id"], fingerprint)).fetchone() is None,
                     "audit batch already consumed; use a fresh batch")

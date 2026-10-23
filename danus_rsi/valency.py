@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from urllib.parse import urlparse
 
 from .protocol import ProtocolError, require, text
@@ -39,11 +40,37 @@ def normalize_snapshot(value):
         if identity in seen:
             continue
         seen.add(identity)
-        papers.append({k: item[k] for k in ("id", "source", "title", "url", "doi", "authors", "categories", "abstract") if k in item})
+        papers.append({k: item[k] for k in ("id", "source", "title", "url", "doi", "authors", "categories", "abstract", "first_submitted") if k in item})
     return {"provider": "valency", "query": value.get("query", "imported export"),
             "retrieved_at": value.get("retrieved_at"), "tool": value.get("tool", value.get("_meta", {}).get("tool")),
             "server_version": value.get("server_version", value.get("_meta", {}).get("server_version")),
             "warnings": value.get("warnings", []), "papers": papers}
+
+
+MATH_PREFIXES = ("math.",)
+PHYSICS_CATEGORIES = {"math-ph", "math.MP", "hep-th", "hep-ph", "gr-qc", "quant-ph", "nucl-th"}
+PHYSICS_PREFIXES = ("cond-mat.", "nlin.", "physics.", "astro-ph.")
+
+
+def paper_domains(paper):
+    """Benchmark domains a paper can seed, from its arXiv categories only."""
+    domains = set()
+    for category in paper.get("categories") or []:
+        if category in PHYSICS_CATEGORIES or category.startswith(PHYSICS_PREFIXES):
+            domains.add("theoretical-physics")
+        elif category.startswith(MATH_PREFIXES):
+            domains.add("mathematics")
+    return domains
+
+
+def eligible_papers(papers, since):
+    """Papers first submitted on or after `since` (ISO date), with a usable domain.
+
+    Restricting mining to recent papers limits, but does not exclude,
+    contamination from model training data. Undated records are excluded."""
+    require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", since or "") is not None, "--since must be an ISO date YYYY-MM-DD")
+    return [p for p in papers if isinstance(p.get("first_submitted"), str)
+            and p["first_submitted"][:10] >= since and paper_domains(p)]
 
 
 def import_snapshot(store, value):

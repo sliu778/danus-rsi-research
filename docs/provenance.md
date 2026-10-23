@@ -21,6 +21,10 @@ Ten metadata records were retrieved from the connected Valency database on 2026-
 - [Analysis of General Power Counting Rules in Effective Field Theory](https://arxiv.org/abs/1601.07551)
 - [Effective Field Theories and the Role of Consistency in Theory Choice](https://arxiv.org/abs/1211.0634)
 
+Eight further records were retrieved on 2026-10-23 as dated mining input: four math.FA/math.SP papers on operator spectra and four hep-th/gr-qc papers on effective field theory, first submitted between 2026-08-07 and 2026-10-16. Only metadata was stored. They were chosen as topical neighbors of the development suite, not for importance, and any draft mined from them needs review against the full paper.
+
+The design of the solver arm, shared audit registry and frozen-side alternation was informed by work on self-improving agents and verifier exploitation, read at abstract level through Valency: [Darwin Gödel Machine](https://arxiv.org/abs/2505.22954), [Red Queen Gödel Machine](https://arxiv.org/abs/2606.26294), [Who Verifies the Verifier?](https://arxiv.org/abs/2610.11464), and [More Convincing, Not More Correct](https://arxiv.org/abs/2607.05904). These are motivations, not validations of the thresholds used here.
+
 No accuracy, scientific claim or promotion threshold in this implementation is asserted to have been validated by these papers. A record returned by semantic search can be relevant without being authoritative for a particular claim.
 
 Official integration references: [Valency Direct API](https://docs.valency.io/guides/api/), [Valency endpoints](https://docs.valency.io/reference/endpoints/), [Valency/ChatGPT connection boundaries](https://docs.valency.io/guides/chatgpt/), and [Codex noninteractive mode](https://learn.chatgpt.com/docs/non-interactive-mode).

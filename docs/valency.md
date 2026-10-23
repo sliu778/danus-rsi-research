@@ -4,7 +4,7 @@ Valency Bond is the literature database used by this project. The [official MCP 
 
 ## Already connected desktop app
 
-The initial build called the connected Valency `list_sources`, `search_by_title` and `semantic_search_papers` tools. It imported ten relevant metadata records and preserved source, paper/version ID, title, permalink, query, warnings and server version. Generic semantic searches returned ambiguous-match warnings; the snapshots preserve these caveats. No search ranking becomes a proof-validity label.
+The initial build called the connected Valency `list_sources`, `search_by_title` and `semantic_search_papers` tools. It imported ten relevant metadata records and preserved source, paper/version ID, title, permalink, query, warnings and server version. A later build added two snapshots of eight recent research papers (math.FA/math.SP and hep-th/gr-qc, first submitted August–October 2026) with their `first_submitted` dates, so mining has dated input offline. Generic semantic searches returned ambiguous-match warnings; the snapshots preserve these caveats. No search ranking becomes a proof-validity label.
 
 To add records without a standalone token, export a connected tool's JSON result to a local file, then run:
 
@@ -30,6 +30,15 @@ unset VALENCY_TOKEN
 The token is read from the environment and sent only to the HTTPS Valency host, with redirects disabled. It is not stored in SQLite, reports or role prompts. `.env.example` documents variable names; the application does not automatically read `.env` files. Do not paste a token into an issue, configuration example, Git commit, or model prompt.
 
 An alternative for interactive CLI use is [Valency's Codex CLI OAuth setup](https://docs.valency.io/guides/chatgpt/codex-cli/). That connection belongs to the Codex CLI; this Python adapter uses its own explicit token. The model sessions used for controlled evaluation deliberately ignore MCP/user configuration and do not use an interactive Valency connection.
+
+## Mining benchmark drafts
+
+`mine --since YYYY-MM-DD` reads stored records (optionally after a fresh standalone `--query`) and keeps only papers that:
+
+- carry a `first_submitted` date on or after `--since`. Undated records are excluded, because recency is the only contamination control available from metadata;
+- have an arXiv category that maps to a benchmark domain: `math.*` → mathematics; `math-ph`/`math.MP`, `hep-th`, `hep-ph`, `gr-qc`, `quant-ph`, `nucl-th`, `cond-mat.*`, `nlin.*`, `physics.*`, `astro-ph.*` → theoretical physics. A paper can map to both.
+
+Choose `--since` after the model's training cutoff when it is known. A recent date limits, but cannot exclude, contamination: results circulate before arXiv submission. Mining reads metadata and any abstracts in the snapshot, never full texts, so every draft needs a reviewer who reads the paper. See [protocol](protocol.md#benchmark-growth).
 
 ## Provenance model
 
