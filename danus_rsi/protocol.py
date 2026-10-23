@@ -11,7 +11,7 @@ DATA = Path(__file__).parent / "data"
 DOMAINS = {"mathematics", "theoretical-physics"}
 ROLES = ("correctness", "adversarial", "completeness")
 FROZEN_PROTOCOL = "danus-rsi-panel-v1"
-SOLVER_PROTOCOL = "danus-rsi-solver-v1"
+SOLVER_PROTOCOL = "danus-rsi-solver-v2"  # v2: strict accepts counted over k attempts per problem
 # Fields each arm's optimizer may change; everything else must be identical to the parent.
 ARM_FIELDS = {"verifier": {"name", "verifier_guidance", "rationale"},
               "solver": {"name", "solver_guidance", "rationale"}}
@@ -69,6 +69,15 @@ def require_arm_change(arm, parent, candidate):
     require(all(candidate[field] == parent[field] for field in frozen),
             f"{arm} optimizer changed a frozen field: " + ", ".join(sorted(f for f in frozen if candidate[f] != parent[f])))
     return candidate
+
+
+def shares_window(text_value, source, window=8):
+    """True when `text_value` repeats any run of `window` consecutive words from `source`."""
+    words = lambda s: re.findall(r"[a-z0-9]+", s.casefold())
+    source_words = words(source)
+    grams = {tuple(source_words[i:i + window]) for i in range(len(source_words) - window + 1)}
+    target = words(text_value)
+    return any(tuple(target[i:i + window]) in grams for i in range(len(target) - window + 1))
 
 
 def require_no_copied_answers(guidance, tasks, minimum=60):
@@ -184,39 +193,61 @@ def validate_solver_audit(audit, exposed_tasks):
     return audit
 
 
+def wilson(successes, trials, z=1.96):
+    """Wilson score interval for a binomial proportion; descriptive, never a gate input."""
+    if not trials:
+        return None
+    p = successes / trials
+    centre = (p + z * z / (2 * trials)) / (1 + z * z / trials)
+    half = z * math.sqrt(p * (1 - p) / trials + z * z / (4 * trials * trials)) / (1 + z * z / trials)
+    return [round(max(0.0, centre - half), 4), round(min(1.0, centre + half), 4)]
+
+
+def attempt_decisions(row):
+    """A problem row holds one attempt (`decision`) or several (`attempts`)."""
+    return [a["decision"] for a in row["attempts"]] if "attempts" in row else [row["decision"]]
+
+
 def solve_metrics(rows):
-    """Strict-accept rate of generated solutions; abstentions are not solves."""
-    n = len(rows)
-    count = lambda decision: sum(r["decision"] == decision for r in rows)
-    return {"n": n, "accepted": count("accept"), "rejected": count("reject"), "abstained": count("abstain"),
-            "errors": count("error"), "solve_rate": count("accept") / n if n else None}
+    """Strict-accept rate over all attempts; abstentions are not solves."""
+    decisions = [d for r in rows for d in attempt_decisions(r)]
+    attempts = len(decisions)
+    count = decisions.count
+    return {"n": len(rows), "attempts": attempts, "accepted": count("accept"), "rejected": count("reject"),
+            "abstained": count("abstain"), "errors": count("error"),
+            "solve_rate": count("accept") / attempts if attempts else None,
+            "solve_rate_95ci": wilson(count("accept"), attempts)}
 
 
 def solver_gate(baseline, candidate, minimum_gain=0.10):
     """Frozen paired rule for solver strategies judged by one fixed verifier policy.
 
-    Not a significance test: single samples, a shared model family and
-    stochastic decoding all limit what a pass means."""
+    Counts strict accepts over all attempts, so k samples per problem need a
+    gain of max(1, ceil(0.1 n k)). With k = 1 this is the single-sample rule.
+    Not a significance test: a shared model family and stochastic decoding
+    limit what a pass means; the reported intervals show how wide the noise is."""
     if [r["task_id"] for r in baseline] != [r["task_id"] for r in candidate]:
         return {"eligible": False, "reasons": ["unpaired solver tasks"]}
     if [r["domain"] for r in baseline] != [r["domain"] for r in candidate]:
         return {"eligible": False, "reasons": ["solver task domains changed"]}
+    if [len(attempt_decisions(r)) for r in baseline] != [len(attempt_decisions(r)) for r in candidate]:
+        return {"eligible": False, "reasons": ["unequal attempts per problem"]}
     b, c = solve_metrics(baseline), solve_metrics(candidate)
     reasons = []
     if not b["n"]:
         reasons.append("no solver tasks")
     if b["errors"] or c["errors"]:
         reasons.append("infrastructure errors invalidate the comparison")
-    needed = max(1, math.ceil(minimum_gain * b["n"]))
+    needed = max(1, math.ceil(minimum_gain * b["attempts"]))
     if c["accepted"] - b["accepted"] < needed:
-        reasons.append(f"strict-accept gain is below {needed} problem(s)")
+        reasons.append(f"strict-accept gain is below {needed} attempt(s)")
     for domain in sorted(DOMAINS):
         bd = solve_metrics([r for r in baseline if r["domain"] == domain])
         cd = solve_metrics([r for r in candidate if r["domain"] == domain])
         if cd["accepted"] < bd["accepted"]:
             reasons.append(domain + ": fewer strict accepts")
     lost = [b_row["task_id"] for b_row, c_row in zip(baseline, candidate)
-            if b_row["decision"] == "accept" and c_row["decision"] != "accept"]
+            if attempt_decisions(c_row).count("accept") < attempt_decisions(b_row).count("accept")]
     return {"eligible": not reasons, "reasons": reasons, "baseline": b, "candidate": c, "lost_solves": lost}
 
 
@@ -230,6 +261,7 @@ def metrics(rows):
     coverage = sum(r["decision"] in ("accept", "reject") for r in rows) / len(rows) if rows else 0
     balanced = (accepted / len(valid) + rejected / len(invalid)) / 2 if valid and invalid else None
     return {"n": len(rows), "valid": len(valid), "invalid": len(invalid), "coverage": coverage,
+            "valid_accept_95ci": wilson(accepted, len(valid)), "invalid_reject_95ci": wilson(rejected, len(invalid)),
             "false_accepts": fa, "false_accept_rate": fa / len(invalid) if invalid else None,
             "balanced_accuracy": balanced}
 

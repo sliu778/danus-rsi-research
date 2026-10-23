@@ -277,7 +277,8 @@ class BridgeTests(unittest.TestCase):
 
     def test_confirm_assigns_through_danus_cli_only(self):
         record = bridge.assign(self.store, finding(self.store), "proj/w1", self.root, confirm=True, runner=self.runner())
-        command, text = self.calls[0]
+        self.assertEqual(self.calls[0][0], [str(self.root / "bin" / "danus"), "status", "proj/w1", "--json"])
+        command, text = self.calls[1]
         self.assertEqual(command, [str(self.root / "bin" / "danus"), "assign", "proj/w1", "--stdin"])
         self.assertIn("The fixture lemma holds.", text)
         self.assertTrue(record["assigned"])

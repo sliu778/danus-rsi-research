@@ -10,7 +10,7 @@ Research findings in this repository are proposals: a model panel and a native c
 | Observe | read `<project>/global_memory/verification.jsonl` and `<project>/fact_graph/facts/<id>.md` | read worker-local memory |
 | Start/stop | left to the operator or the Danus main agent | start, stop or re-roster workers |
 
-Assignment is a dry run unless `--confirm` is given. The dry run prints the exact `TASK.md` text, target and command, so the operator can read it before replacing a worker's current task. Each confirmed handoff is recorded with its finding, target, task digest and CLI output.
+Assignment is a dry run unless `--confirm` is given. The dry run prints the exact `TASK.md` text, target and command, so the operator can read it before replacing a worker's current task. A confirmed handoff first runs the read-only `danus status <project>/<worker> --json`; a missing project or worker stops there, before any file is written. Each confirmed handoff is recorded with its finding, target, task digest and CLI output.
 
 ## Workflow
 
@@ -32,7 +32,7 @@ The assignment asks the worker to pass `source_id="<handoff ID>"` to every `fact
 
 - **verified facts**: a `correct` verdict whose `fact_id` file exists in `fact_graph/facts/`. A revoked fact is moved out of that directory, so it drops out at the next sync;
 - **native rejections**: `wrong` verdicts;
-- **status**: `danus-verified`, `submitted-unverified` or `pending`.
+- **status**: `danus-verified`, `submitted-unverified`, `pending`, or `project-missing` when the project directory is no longer found.
 
 Each sync stores one timestamped snapshot, and later research rounds (`run`, `demo`) receive the latest snapshot's verified facts as planner memory, labeled with their `fact_id`. Those are the only prior results the planner sees as established. Panel-supported findings remain proposals.
 

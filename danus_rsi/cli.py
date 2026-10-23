@@ -49,12 +49,14 @@ def parser():
     rsi.add_argument("--cycles", type=int, default=2)
     rsi.add_argument("--limit", type=int, default=8)
     rsi.add_argument("--arm", choices=arms[:2], default="verifier", help="verifier: labeled calibration; solver: verifier-gated solve rate")
+    rsi.add_argument("--samples", type=int, default=1, help="solver arm: independent attempts per problem (1..5)")
     run = command("run", "run a research campaign with development RSI after each round", True)
     run.add_argument("--objective", required=True)
     run.add_argument("--domain", choices=["mathematics", "theoretical-physics"], default="theoretical-physics")
     run.add_argument("--cycles", type=int, default=1)
     run.add_argument("--limit", type=int, default=8)
     run.add_argument("--arm", choices=arms, default="verifier", help="improvement arm after each research round")
+    run.add_argument("--samples", type=int, default=1, help="solver arm: independent attempts per problem (1..5)")
     run.add_argument("--refresh-literature", action="store_true", help="query Valency before the campaign (requires standalone token)")
     mine = command("mine", "draft benchmark tasks from recent Valency records (quarantined)", True)
     mine.add_argument("--since", required=True, help="only papers first submitted on/after this ISO date")
@@ -77,6 +79,7 @@ def parser():
     audit.add_argument("--candidate", required=True)
     audit.add_argument("--file", type=Path, required=True)
     audit.add_argument("--promote", action="store_true")
+    audit.add_argument("--samples", type=int, default=1, help="solver audits: independent attempts per problem (1..5)")
     promote = command("promote", "activate a previously eligible live audit evaluation")
     promote.add_argument("evaluation")
     rollback = command("rollback", "restore a previously active policy")
@@ -172,6 +175,9 @@ def execute(args):
         config["deadline_seconds"] = args.deadline
     validate_config(config)
     require(not hasattr(args, "cycles") or 1 <= args.cycles <= 5, "cycles must be 1..5")
+    require(not hasattr(args, "samples") or 1 <= args.samples <= 5, "samples must be 1..5")
+    require(not (args.command == "improve" and args.arm == "verifier" and args.samples != 1),
+            "--samples applies to the solver arm; verifier cases are fixed candidates")
     suite = effective_suite(store)
     policy = args.policy or store.active()
     store.get(policy, "policy")
@@ -189,10 +195,12 @@ def execute(args):
     backend = ScriptedAgents() if args.command == "demo" else LiveAgents(config)
     engine = Engine(store, backend, config, args.retry_errors)
     audit = read_json(args.file) if args.command == "audit" else None
+    if audit is not None and audit.get("split") != "solver-audit":
+        require(args.samples == 1, "--samples applies to solver audits; verifier audit cases are fixed candidates")
     payload = {"suite": digest(suite), "policy": policy, "limit": getattr(args, "limit", None),
                "cycles": getattr(args, "cycles", None), "objective": getattr(args, "objective", None),
                "domain": getattr(args, "domain", None), "candidate": getattr(args, "candidate", None),
-               "arm": getattr(args, "arm", None), "since": getattr(args, "since", None),
+               "arm": getattr(args, "arm", None), "since": getattr(args, "since", None), "samples": getattr(args, "samples", None),
                "mining": [p["source"] + ":" + p["id"] for p in papers] if papers is not None else None,
                "audit": digest(audit) if audit else None,
                "literature": [p["id"] for p in store.artifacts("paper")]}
@@ -207,7 +215,7 @@ def execute(args):
                 research = engine.research(objective, domain, current, f"round/{n}/research", memory)
                 arm = args.arm if args.arm != "alternate" else ("verifier", "solver")[n % 2]
                 if arm == "solver":
-                    improvement = engine.improve_solver(suite, current, 1, args.limit, f"round/{n}/solver-rsi")
+                    improvement = engine.improve_solver(suite, current, 1, args.limit, f"round/{n}/solver-rsi", getattr(args, "samples", 1))
                 else:
                     improvement = engine.improve(suite, current, 1, args.limit, f"round/{n}/rsi")
                 current = improvement["selected_development_policy"]
@@ -218,17 +226,17 @@ def execute(args):
                 rounds.append({"research": research, "improvement": improvement})
             result = {"kind": "campaign", "rounds": rounds, "development_policy": current, "active_policy": store.active()}
             if args.command == "demo" and papers:
-                result["mining"] = engine.mine(papers, 1, 2, "demo/mine")
+                result["mining"] = engine.mine(papers, 1, 2, "demo/mine", engine.exposures(suite))
         elif args.command == "benchmark":
             result = engine.benchmark(suite, policy, args.limit)
         elif args.command == "improve" and args.arm == "solver":
-            result = engine.improve_solver(suite, policy, args.cycles, args.limit)
+            result = engine.improve_solver(suite, policy, args.cycles, args.limit, samples=args.samples)
         elif args.command == "improve":
             result = engine.improve(suite, policy, args.cycles, args.limit)
         elif args.command == "mine":
-            result = engine.mine(papers, args.batches, args.batch_size)
+            result = engine.mine(papers, args.batches, args.batch_size, exposed=engine.exposures(suite))
         elif audit.get("split") == "solver-audit":
-            result = engine.audit_solver(audit, suite, args.candidate, args.promote)
+            result = engine.audit_solver(audit, suite, args.candidate, args.promote, args.samples)
         else:
             result = engine.audit(audit, suite, args.candidate, args.promote)
         store.finish_run(run_id, "complete")

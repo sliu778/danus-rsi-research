@@ -5,6 +5,23 @@ from pathlib import Path
 from .protocol import save_json
 
 
+def interval(ci):
+    return f"[{ci[0]:.2f}, {ci[1]:.2f}]" if ci else "[n/a]"
+
+
+def evidence(kind, gate):
+    """The numbers behind a development decision; intervals are descriptive, not the gate."""
+    b, c = gate.get("baseline"), gate.get("candidate")
+    if not b or not c:
+        return ""
+    if kind == "solver-rsi":
+        return (f"; strict accepts {b['accepted']}/{b['attempts']} {interval(b['solve_rate_95ci'])}"
+                f" → {c['accepted']}/{c['attempts']} {interval(c['solve_rate_95ci'])}")
+    if b["balanced_accuracy"] is None or c["balanced_accuracy"] is None:
+        return "; balanced accuracy n/a (selection lacks valid or invalid cases)"
+    return f"; balanced accuracy {b['balanced_accuracy']:.2f} → {c['balanced_accuracy']:.2f}"
+
+
 def summary(result):
     kind = result.get("kind", "campaign")
     lines = []
@@ -19,7 +36,7 @@ def summary(result):
         for item in result["cycles"]:
             selected = item["candidate"] is not None and item["selected_for_next_cycle"] == item["candidate"]
             lines.append((f"{arm} development cycle {item['cycle']}", (item["candidate"] or "no candidate")[:12],
-                          "branch selected" if selected else "baseline retained"))
+                          ("branch selected" if selected else "baseline retained") + evidence(kind, item["development_gate"])))
     elif kind == "mining":
         lines.append(("Valency mining", f"{result['papers']} eligible records",
                       f"{len(result['drafts'])} quarantined draft(s), {len(result['rejected'])} rejected"))
