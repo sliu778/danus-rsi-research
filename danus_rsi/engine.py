@@ -89,6 +89,14 @@ def decision_from(judgments, native):
     return "abstain"
 
 
+def exposed_tasks(store, suite):
+    """Every problem statement a model or optimizer has already seen."""
+    exposed = suite["tasks"] + [x["body"] for x in store.artifacts("exposed_task")]
+    exposed += [t for s in store.artifacts("development_suite") for t in s["body"]["tasks"]]
+    exposed += [x["body"]["task"] for x in store.artifacts("benchmark_draft")]
+    return exposed
+
+
 REDACTED = "[withheld: overlaps the reference answer]"
 
 
@@ -212,11 +220,7 @@ class Engine:
         return {"kind": "benchmark", "policy": policy_id, "rows": rows}
 
     def exposures(self, suite):
-        """Every problem statement a model or optimizer has already seen."""
-        exposed = suite["tasks"] + [x["body"] for x in self.store.artifacts("exposed_task")]
-        exposed += [t for s in self.store.artifacts("development_suite") for t in s["body"]["tasks"]]
-        exposed += [x["body"]["task"] for x in self.store.artifacts("benchmark_draft")]
-        return exposed
+        return exposed_tasks(self.store, suite)
 
     def research(self, objective, domain, policy_id, prefix="research", memory=None):
         require(domain in DOMAINS, "unsupported research domain")

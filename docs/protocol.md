@@ -129,6 +129,8 @@ A solver audit is a fresh, independently reviewed problem set without candidate 
 }
 ```
 
+`audit-template --arm solver|verifier --out PATH` writes a worksheet that fails validation until a reviewer completes and signs it, and refuses paths inside the repository other than its ignored `.state/`. `audit-check PATH` validates a batch, checks it against current exposure and the consumed-problem registry, and reports counts and `"fresh"` without reserving anything or printing case content.
+
 A batch needs at least 12 problems, at least 8 families, and at least five problems in each domain. Overlap rules are the same as for verifier audits. Both audit kinds share one consumed-problem registry: a problem or family consumed by either arm can never be fresh for the other. `audit --file` selects the arm from the file's `split`; `promote` and `rollback` work for both.
 
 ## Benchmark growth

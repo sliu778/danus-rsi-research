@@ -30,7 +30,7 @@ cd /mnt/c/Users/Simo-/Documents/Codex/2026-10-20/i/outputs/danus-rsi-research
 bash scripts/run.sh demo --cycles 2 --limit 4
 ```
 
-`scripts/run.sh` sources `/opt/danus/scripts/env.sh` and uses `/opt/danus/runtime/venv/bin/python` when that installation exists. Set `DANUS_ROOT` for another location. Without an existing installation it uses `PYTHON_BIN`, or `python3`, for core commands; it does not install or alter Danus automatically.
+`scripts/run.sh` sources `/opt/danus/scripts/env.sh` and uses `/opt/danus/runtime/venv/bin/python` when that installation exists. Set `DANUS_ROOT` for another location, including a checkout installed from a Windows folder and run through WSL (`DANUS_ROOT=/mnt/c/.../Danus`). `bash scripts/run.sh doctor` reports every live prerequisite in one read-only pass. [The live runbook](live-runbook.md) goes from there to a first result. Without an existing installation it uses `PYTHON_BIN`, or `python3`, for core commands; it does not install or alter Danus automatically.
 
 To inspect the existing live prerequisites:
 

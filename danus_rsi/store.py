@@ -176,15 +176,27 @@ class Store:
     def run(self, run_id):
         return next(r for r in self.runs() if r["id"] == run_id)
 
-    def reserve_audit(self, audit, run_id):
-        """One use even after interruption. Re-labeling/re-naming cannot reuse cases."""
-        from .protocol import statement_key
-        fingerprint = digest(audit)
+    @staticmethod
+    def audit_keys(audit):
         # Verifier audits carry labeled cases; solver audits carry bare tasks. Both
         # consume the same registry, so a problem is never fresh for either arm twice.
+        from .protocol import statement_key
         tasks = [c["task"] for c in audit.get("cases", [])] + audit.get("tasks", [])
         keys = {"statement:" + statement_key(t["prompt"]) for t in tasks}
-        keys |= {"family:" + digest(t["family_id"]) for t in tasks}
+        return keys | {"family:" + digest(t["family_id"]) for t in tasks}
+
+    def audit_status(self, audit):
+        """Read-only: has this batch, or any of its problems, already been consumed?"""
+        keys = self.audit_keys(audit)
+        with self.connect() as db:
+            batch = db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?", (audit.get("id"), digest(audit))).fetchone()
+            consumed = sum(db.execute("SELECT 1 FROM audit_cases WHERE fingerprint=?", (k,)).fetchone() is not None for k in keys)
+        return {"batch_consumed": batch is not None, "consumed_problem_keys": consumed}
+
+    def reserve_audit(self, audit, run_id):
+        """One use even after interruption. Re-labeling/re-naming cannot reuse cases."""
+        fingerprint = digest(audit)
+        keys = self.audit_keys(audit)
         with self.transaction() as db:
             require(db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?", (audit["id"], fingerprint)).fetchone() is None,
                     "audit batch already consumed; use a fresh batch")

@@ -2,7 +2,7 @@
 
 A bounded research-agent system for graduate mathematics and theoretical physics, built on [Danus](https://github.com/frenzymath/Danus) and the preceding Danus Math Panel benchmark. It runs research workflows, measures proposed verifier strategies, and maintains an auditable history of experiments.
 
-**Status: experimental infrastructure, version 0.3.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
+**Status: experimental infrastructure, version 0.4.0.** Offline tests and scripted demonstrations validate software behavior. No live research campaign, scientific discovery, or measured model improvement is claimed. The default model is `gpt-6-astra`, through the existing Danus ChatGPT-subscription backend.
 
 ## What runs
 
@@ -101,7 +101,9 @@ bash scripts/run.sh handoff FINDING_ID --target myproject/high-1 --confirm
 bash scripts/run.sh handoff-sync
 ```
 
-From Windows, enter the installed distribution with `wsl -d Danus -u danus`. Windows paths are available under `/mnt/c/`. `DANUS_ROOT` can select another existing installation. See [environment and startup](docs/environment.md) for the exact local path and dependency checks. Live commands check subscription login and the native verifier's deployment PID. They do not fall back to an OpenAI API key.
+Before any live run, `bash scripts/run.sh doctor` checks every prerequisite without a model call, and `--estimate` on any live command prints its call upper bound without starting it. The [live runbook](docs/live-runbook.md) walks from installation to a first solver experiment, private audit sets and a Danus handoff.
+
+From Windows, enter the installed distribution with `wsl -d Danus -u danus`, or set `DANUS_ROOT` to a Danus checkout under `/mnt/c/...` when Danus was installed from a Windows folder. Windows paths are available under `/mnt/c/`. `DANUS_ROOT` can select another existing installation. See [environment and startup](docs/environment.md) for the exact local path and dependency checks. Live commands check subscription login and the native verifier's deployment PID. They do not fall back to an OpenAI API key.
 
 All runs have a persisted call budget and deadline. The default deadline is four hours; individual model calls are capped at ten minutes and native checks at sixteen minutes. These are upper bounds, not time estimates. Each native request counts as one call; native-service internal tokens/requests are not observable. See [configuration](config.example.json).
 
