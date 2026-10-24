@@ -79,12 +79,16 @@ def assign(store, finding_id, target, root=None, confirm=False, allow_unresolved
     plan = {"handoff_id": handoff_id, "finding": finding_id, "target": target, "finding_status": status,
             "command": [str(root / "bin" / "danus"), "assign", target, "--stdin"], "task_digest": digest(text)}
     if not confirm:
-        return plan | {"assigned": False, "task_text": text, "note": "dry run; rerun with --confirm to write the worker's TASK.md"}
+        return plan | {"assigned": False, "task_text": text,
+                       "note": "dry run; rerun with --confirm to write the worker's TASK.md"}
     # Read-only preflight: a missing project or worker fails here, before any TASK.md is touched.
-    status = runner([plan["command"][0], "status", target, "--json"], input="", capture_output=True, text=True, timeout=60)
-    require(status.returncode == 0, f"Danus worker {target} not found or not readable: " + (status.stderr or status.stdout or "")[-1000:].strip())
+    status = runner([plan["command"][0], "status", target, "--json"], input="", capture_output=True, text=True,
+                    timeout=60)
+    require(status.returncode == 0, f"Danus worker {target} not found or not readable: "
+            + (status.stderr or status.stdout or "")[-1000:].strip())
     completed = runner(plan["command"], input=text, capture_output=True, text=True, timeout=60)
-    require(completed.returncode == 0, "danus assign failed: " + (completed.stderr or completed.stdout or "")[-2000:].strip())
+    require(completed.returncode == 0,
+            "danus assign failed: " + (completed.stderr or completed.stdout or "")[-2000:].strip())
     record = plan | {"assigned_at": time.time(), "danus_output": (completed.stdout or "")[-2000:]}
     store.put("danus_handoff", record)
     store.event("danus_handoff", {"handoff": handoff_id, "finding": finding_id, "target": target})
@@ -132,9 +136,9 @@ def sync(store, root=None):
             state = "submitted-unverified"
         else:
             state = "pending" if directory.is_dir() else "project-missing"
-        outcomes.append({"handoff_id": handoff["handoff_id"], "finding": handoff["finding"], "target": handoff["target"],
-                         "verified_facts": facts, "native_rejections": rejections, "traced_submissions": len(traced),
-                         "status": state})
+        outcomes.append({"handoff_id": handoff["handoff_id"], "finding": handoff["finding"],
+                         "target": handoff["target"], "verified_facts": facts, "native_rejections": rejections,
+                         "traced_submissions": len(traced), "status": state})
     # One timestamped snapshot per sync, so a later revocation supersedes an earlier fact.
     snapshot = store.put("danus_sync", {"synced_at": time.time(), "danus_root": str(root), "outcomes": outcomes})
     return {"kind": "handoff-sync", "snapshot": snapshot, "outcomes": outcomes}

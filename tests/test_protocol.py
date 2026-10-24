@@ -28,13 +28,17 @@ def rows(decisions):
 
 
 def judgment(verdict="correct"):
-    return {"status": "ok", "data": {"verdict": verdict, "scores": {k: 4 if verdict == "correct" else 1 for k in transport.DIMENSIONS},
-            "critical_errors": [] if verdict == "correct" else ["explicit invalid inference"], "gaps": [], "rationale": "fixture", "reference_concern": ""}}
+    return {"status": "ok", "data": {
+        "verdict": verdict, "scores": {k: 4 if verdict == "correct" else 1 for k in transport.DIMENSIONS},
+        "critical_errors": [] if verdict == "correct" else ["explicit invalid inference"], "gaps": [],
+        "rationale": "fixture", "reference_concern": ""}}
 
 
 def native(verdict="correct"):
-    return {"status": "ok", "data": {"verdict": verdict, "verification_report": {"summary": "fixture", "gaps": [],
-                        "critical_errors": [] if verdict == "correct" else [{"location": "step", "issue": "invalid"}]}, "repair_hints": ""}}
+    return {"status": "ok", "data": {"verdict": verdict, "verification_report": {
+        "summary": "fixture", "gaps": [],
+        "critical_errors": [] if verdict == "correct" else [{"location": "step", "issue": "invalid"}]},
+        "repair_hints": ""}}
 
 
 class ProtocolTests(unittest.TestCase):
@@ -43,7 +47,8 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(len(suite["tasks"]), 18)
         cases = calibration_cases(suite)
         self.assertEqual(len(cases), 18)
-        self.assertEqual({c["task"]["domain"] for c in balanced_selection(cases, 4)}, {"mathematics", "theoretical-physics"})
+        self.assertEqual({c["task"]["domain"] for c in balanced_selection(cases, 4)},
+                         {"mathematics", "theoretical-physics"})
         self.assertEqual({(c["task"]["domain"], c["label"]) for c in balanced_selection(cases, 4)},
                          {(d, y) for d in ("mathematics", "theoretical-physics") for y in ("valid", "invalid")})
 
@@ -57,7 +62,8 @@ class ProtocolTests(unittest.TestCase):
     def test_judge_receives_no_policy_name_or_labels(self):
         task = copy.deepcopy(load_suite()["tasks"][0])
         task["calibration"] = [{"label": "HIDDEN_LABEL"}]
-        text = agents.verification_prompt(task, {"claim": "x", "proof": "y", "answer": "z"}, dict(BASELINE, name="HIDDEN_NAME"), "adversarial")
+        text = agents.verification_prompt(task, {"claim": "x", "proof": "y", "answer": "z"},
+                                          dict(BASELINE, name="HIDDEN_NAME"), "adversarial")
         self.assertNotIn("HIDDEN_LABEL", text)
         self.assertNotIn("HIDDEN_NAME", text)
 
@@ -71,7 +77,8 @@ class ProtocolTests(unittest.TestCase):
         validate_audit(audit, [])
         with self.assertRaisesRegex(ProtocolError, "overlaps"):
             validate_audit(audit, [audit["cases"][0]["task"]])
-        exposed = dict(audit["cases"][0]["task"], family_id="renamed", prompt="  " + audit["cases"][0]["task"]["prompt"].lower() + "\n")
+        exposed = dict(audit["cases"][0]["task"], family_id="renamed",
+                       prompt="  " + audit["cases"][0]["task"]["prompt"].lower() + "\n")
         with self.assertRaisesRegex(ProtocolError, "overlaps"):
             validate_audit(audit, [exposed])
 
@@ -139,7 +146,8 @@ class ProtocolTests(unittest.TestCase):
 
     def test_tool_events_are_rejected(self):
         with self.assertRaises(transport.BenchError):
-            transport.inspect_events('{"type":"item.completed","item":{"type":"command_execution"}}\n{"type":"turn.completed"}')
+            transport.inspect_events('{"type":"item.completed","item":{"type":"command_execution"}}\n'
+                                     '{"type":"turn.completed"}')
 
 
 if __name__ == "__main__":

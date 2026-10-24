@@ -13,7 +13,8 @@ from danus_rsi.valency import _call, import_snapshot, normalize_snapshot, search
 class ValencyTests(unittest.TestCase):
     def snapshot(self):
         return {"query": "proof verification", "papers": [
-            {"id": "example-v1", "source": "arxiv", "title": "A fixture paper", "url": "https://arxiv.org/abs/example"}],
+            {"id": "example-v1", "source": "arxiv", "title": "A fixture paper",
+             "url": "https://arxiv.org/abs/example"}],
             "_meta": {"server_version": "fixture", "tool": "semantic_search_papers"}}
 
     def test_connector_and_mcp_text_envelopes(self):

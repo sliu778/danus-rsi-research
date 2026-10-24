@@ -1,3 +1,4 @@
+from contextlib import redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -5,7 +6,6 @@ import subprocess
 import tempfile
 import types
 import unittest
-from contextlib import redirect_stdout
 
 from danus_rsi import agents
 from danus_rsi.cli import audit_check, main
@@ -39,7 +39,8 @@ class DoctorTests(unittest.TestCase):
         self.login_envs = []
         codex = types.SimpleNamespace(resolve_bin=lambda: "/fake/codex", subprocess_env=lambda binary: dict(self.env))
         self.kwargs = {"env": self.env, "platform": "linux", "importer": lambda: codex,
-                       "runner": self.runner("Logged in using ChatGPT"), "fetch": lambda url: {"status": "ok", "pid": 4242}}
+                       "runner": self.runner("Logged in using ChatGPT"),
+                       "fetch": lambda url: {"status": "ok", "pid": 4242}}
 
     def runner(self, text):
         def run(command, **kwargs):
@@ -104,9 +105,11 @@ class EstimateTests(unittest.TestCase):
             _, campaign = run_cli("run", "--state", tmp, "--objective", "x", "--cycles", "2", "--arm", "alternate",
                                   "--limit", "6", "--estimate")
             self.assertEqual([b["calls"] for b in campaign["breakdown"]], [23, 49, 23, 61])
-            _, mining = run_cli("mine", "--state", tmp, "--since", "2026-08-01", "--batches", "5", "--batch-size", "3", "--estimate")
+            _, mining = run_cli("mine", "--state", tmp, "--since", "2026-08-01", "--batches", "5", "--batch-size", "3",
+                                "--estimate")
             self.assertEqual(mining["upper_bound_calls"], 3)  # eight dated seed records in batches of three
-            _, query = run_cli("mine", "--state", tmp, "--since", "2099-01-01", "--query", "q", "--batches", "4", "--estimate")
+            _, query = run_cli("mine", "--state", tmp, "--since", "2099-01-01", "--query", "q", "--batches", "4",
+                               "--estimate")
             self.assertEqual(query["upper_bound_calls"], 4)
             self.assertEqual(Store(tmp).runs(), [])
 

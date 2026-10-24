@@ -29,7 +29,8 @@ def unwrap(value):
 
 def normalize_snapshot(value):
     value = unwrap(value)
-    require(isinstance(value, dict) and isinstance(value.get("papers"), list), "expected a Valency paper search/export object")
+    require(isinstance(value, dict) and isinstance(value.get("papers"), list),
+            "expected a Valency paper search/export object")
     papers, seen = [], set()
     for item in value["papers"]:
         for key in ("id", "source", "title", "url"):
@@ -40,7 +41,8 @@ def normalize_snapshot(value):
         if identity in seen:
             continue
         seen.add(identity)
-        papers.append({k: item[k] for k in ("id", "source", "title", "url", "doi", "authors", "categories", "abstract", "first_submitted") if k in item})
+        papers.append({k: item[k] for k in ("id", "source", "title", "url", "doi", "authors", "categories",
+                                            "abstract", "first_submitted") if k in item})
     return {"provider": "valency", "query": value.get("query", "imported export"),
             "retrieved_at": value.get("retrieved_at"), "tool": value.get("tool", value.get("_meta", {}).get("tool")),
             "server_version": value.get("server_version", value.get("_meta", {}).get("server_version")),
@@ -82,7 +84,8 @@ def import_snapshot(store, value):
 
 async def _call(tool, arguments):
     token = os.environ.get("VALENCY_TOKEN", "").strip()
-    require(bool(token), "Set VALENCY_TOKEN from your Valency settings for standalone access, or import a connector export. See docs/valency.md.")
+    require(bool(token), "Set VALENCY_TOKEN from your Valency settings for standalone access, "
+                         "or import a connector export. See docs/valency.md.")
     endpoint = os.environ.get("VALENCY_URL", "https://mcp.valency.io/")
     url = urlparse(endpoint)
     require(url.scheme == "https" and url.hostname == "mcp.valency.io" and url.path in ("", "/")
@@ -94,7 +97,8 @@ async def _call(tool, arguments):
         from mcp.client.streamable_http import streamable_http_client
     except ImportError as exc:
         raise ProtocolError("Install the optional dependency: pip install '.[valency]'") from exc
-    async with httpx2.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=60, follow_redirects=False) as client:
+    async with httpx2.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=60,
+                                  follow_redirects=False) as client:
         async with streamable_http_client(endpoint, http_client=client) as streams:
             async with ClientSession(streams[0], streams[1], read_timeout_seconds=60) as session:
                 await session.initialize()
@@ -114,7 +118,8 @@ def search(query, limit=10):
         raise
     except Exception as exc:
         # SDK exception strings can contain request details. Never log bearer headers.
-        raise RuntimeError("Valency request failed; check connectivity and token permissions. " + type(exc).__name__) from None
+        raise RuntimeError("Valency request failed; check connectivity and token permissions. "
+                           + type(exc).__name__) from None
     from datetime import datetime, timezone
     result["retrieved_at"] = datetime.now(timezone.utc).isoformat()
     return normalize_snapshot(result)

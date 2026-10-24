@@ -1,52 +1,28 @@
 """Adapted from the prior Danus Math Panel. See NOTICE and docs/provenance.md."""
 from __future__ import annotations
 
-import argparse
-
-import csv
-
-import hashlib
-
-import html
-
 import json
-
 import os
-
 from pathlib import Path
-
 import re
-
 import signal
-
 import statistics
-
 import subprocess
-
 import sys
-
 import tempfile
-
-import time
-
-from datetime import datetime, timezone
-
 import urllib.error
-
-import urllib.parse
-
 import urllib.request
 
-import uuid
-
-from contextlib import contextmanager
+from .protocol import canonical, read_json
 
 DIMENSIONS = {"correctness": 50, "completeness": 25, "rigor": 20, "clarity": 5}
 
 FOCI = {
     "correctness": "Check the conclusion, every inference, quantifiers, and theorem hypotheses.",
-    "adversarial": "Actively seek counterexamples, boundary cases, hidden assumptions, and circular arguments. A failed search is not proof.",
-    "completeness": "Check that every requested part is answered, all cases are covered, and the argument is self-contained.",
+    "adversarial": "Actively seek counterexamples, boundary cases, hidden assumptions, and circular arguments. "
+                   "A failed search is not proof.",
+    "completeness": "Check that every requested part is answered, all cases are covered, "
+                    "and the argument is self-contained.",
 }
 
 TEXT_ONLY = (
@@ -56,30 +32,23 @@ TEXT_ONLY = (
     "Use LaTeX for mathematics. Return only the requested JSON object."
 )
 
+
 class BenchError(Exception):
     pass
 
-def now():
-    return datetime.now(timezone.utc).isoformat()
-
-def canonical(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-
-def digest(value):
-    return hashlib.sha256(canonical(value).encode()).hexdigest()
-
-def read_json(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 def save(path, value):
+    """Atomic JSON write: the file is replaced only after it is complete."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     tmp.replace(path)
 
+
 def object_schema(props):
     return {"type": "object", "properties": props, "required": list(props), "additionalProperties": False}
+
 
 STRING = {"type": "string"}
 
@@ -93,6 +62,7 @@ JUDGE_SCHEMA = object_schema({
     "critical_errors": STRINGS, "gaps": STRINGS, "rationale": STRING,
     "reference_concern": STRING,
 })
+
 
 def validate_schema(value, schema, where="response"):
     kind = schema["type"]
@@ -113,6 +83,7 @@ def validate_schema(value, schema, where="response"):
         if not isinstance(value, str) or ("enum" in schema and value not in schema["enum"]):
             raise BenchError(f"{where}: invalid string")
 
+
 def validate_judgment(value):
     validate_schema(value, JUDGE_SCHEMA)
     if not value["rationale"].strip():
@@ -122,6 +93,7 @@ def validate_judgment(value):
     if value["verdict"] == "correct" and value["scores"]["correctness"] != 4:
         raise BenchError("correct verdict requires correctness score 4")
     return value
+
 
 def validate_native(value):
     if not isinstance(value, dict) or value.get("verdict") not in ("correct", "wrong"):
@@ -142,9 +114,11 @@ def validate_native(value):
         raise BenchError("Danus verdict contradicts its errors/gaps; no pass awarded")
     return value
 
+
 def public_task(task):
     # Explicit allowlist: references, rubrics, and calibration labels never enter solver prompts.
     return {key: task[key] for key in ("id", "prompt")}
+
 
 def solver_prompt(task, feedback=None):
     prompt = (
@@ -159,6 +133,7 @@ def solver_prompt(task, feedback=None):
         prompt += "\nPrior candidate and native Danus feedback; repair the argument:\n" + canonical(feedback)
     return prompt
 
+
 def judge_prompt(task, solution, focus, blinded=True):
     blind_text = (
         "You do not know the solver identity, native verifier decision, or other judges' votes. "
@@ -172,27 +147,34 @@ def judge_prompt(task, solution, focus, blinded=True):
         "is a true but irrelevant statement. The reference is an authored guide, not "
         "infallible ground truth; accept different valid proofs and flag an erroneous "
         "reference in reference_concern. An unresolved concern requires uncertain. "
-        "Leave reference_concern as an empty string when you have no concern; never write None or N/A there. "
+        "Leave reference_concern as an empty string when you have no concern; "
+        "never write None or N/A there. "
         "Score each dimension 0 (absent/wrong), 1 (major defects), 2 (partial), "
         "3 (minor limitations), 4 (fully satisfactory). A correct verdict requires "
         "correctness=4, no critical_errors, and no gaps. List precise locations and "
         "reasons in errors/gaps; do not convert uncertainty into correctness.\n" +
-        canonical({"task": task["prompt"], "reference": task["reference"], "rubric": task["rubric"], "candidate": solution})
+        canonical({"task": task["prompt"], "reference": task["reference"], "rubric": task["rubric"],
+                   "candidate": solution})
     )
+
 
 # What judges write when they mean "no concern". A closed list: anything else,
 # including "None, but ...", is a concern and still forces abstention.
-NO_CONCERN = {"none", "no", "n/a", "na", "nil", "null", "-", "--", "–", "—", "not applicable", "no issue", "no issues",
-              "no concern", "no concerns", "none noted", "none identified", "no reference concern", "no reference concerns"}
+NO_CONCERN = {"none", "no", "n/a", "na", "nil", "null", "-", "--", "–", "—", "not applicable", "no issue",
+              "no issues", "no concern", "no concerns", "none noted", "none identified", "no reference concern",
+              "no reference concerns"}
+
 
 def has_reference_concern(text):
     normalized = re.sub(r"\s+", " ", text).strip().strip("\"'`()[]").strip().rstrip(".!;:").strip().casefold()
     return bool(normalized) and normalized not in NO_CONCERN
 
+
 def judge_pass(j):
     return (j["verdict"] == "correct" and not j["critical_errors"] and not j["gaps"]
             and not has_reference_concern(j["reference_concern"]) and j["scores"]["correctness"] == 4
             and j["scores"]["completeness"] >= 3 and j["scores"]["rigor"] >= 3)
+
 
 def aggregate(judgments, native):
     valid = [j["data"] for j in judgments if j["status"] == "ok"]
@@ -206,12 +188,14 @@ def aggregate(judgments, native):
     native_pass = native_ok and native["data"]["verdict"] == "correct"
     score = None
     if complete:
-        score = round(sum(statistics.median(j["scores"][d] for j in valid) * w / 4 for d, w in DIMENSIONS.items()), 2)
+        score = round(sum(statistics.median(j["scores"][d] for j in valid) * w / 4
+                          for d, w in DIMENSIONS.items()), 2)
     return {"panel_complete": complete, "panel_pass": panel_pass,
             "native_complete": native_ok, "native_pass": native_pass,
             "strict_pass": panel_pass and native_pass,
             "needs_review": needs_review, "disagreement": disagreement,
             "reference_concern": reference_concern, "score": score, "votes": votes}
+
 
 def inspect_events(text):
     """Reject observed tools or unknown item types: a contaminated attempt gets no score."""
@@ -239,6 +223,7 @@ def inspect_events(text):
         raise BenchError("Codex emitted no completed turn")
     return usage
 
+
 def stop_group(proc):
     if proc.poll() is not None:
         return
@@ -249,15 +234,16 @@ def stop_group(proc):
         os.killpg(proc.pid, signal.SIGKILL)
         proc.wait()
 
+
 def codex_command(binary, model, effort, cwd, schema, output):
     # Route command construction through Danus's shared launcher contract.
     from danus import codex
     args = codex.exec_cmd(binary, model, effort, "--ignore-user-config", "--ephemeral",
-                         "--skip-git-repo-check", "--sandbox", "read-only", "-C", str(cwd),
-                         "--color", "never", "--json", "--output-schema", str(schema),
-                         "--output-last-message", str(output))
+                          "--skip-git-repo-check", "--sandbox", "read-only", "-C", str(cwd),
+                          "--color", "never", "--json", "--output-schema", str(schema),
+                          "--output-last-message", str(output))
     for setting in ('approval_policy="never"', 'web_search="disabled"',
-                    'project_doc_max_bytes=0', 'model_provider="openai"'):
+                    "project_doc_max_bytes=0", 'model_provider="openai"'):
         args += ["-c", setting]
     for feature in ("shell_tool", "unified_exec", "multi_agent", "apps", "plugins",
                     "browser_use", "browser_use_external", "computer_use", "image_generation",
@@ -265,13 +251,15 @@ def codex_command(binary, model, effort, cwd, schema, output):
         args += ["-c", f"features.{feature}=false"]
     return args + ["-"]
 
+
 class LiveBackend:
     def preflight(self, config):
         from danus import codex
         self.binary = codex.resolve_bin()
         env = codex.subprocess_env(self.binary)
         if env.get("CODEX_BACKEND") != "chatgpt":
-            raise BenchError("this deployment is subscription-only; source Danus scripts/env.sh with CODEX_BACKEND=chatgpt")
+            raise BenchError("this deployment is subscription-only; "
+                             "source Danus scripts/env.sh with CODEX_BACKEND=chatgpt")
         # Never fall back to an API credential supplied by an inherited environment.
         for key in ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN"):
             env.pop(key, None)
@@ -287,7 +275,8 @@ class LiveBackend:
         except (OSError, ValueError) as exc:
             raise BenchError("Danus verifier unavailable: run bash scripts/services.sh up verify") from exc
         pidfile = Path(env.get("DANUS_RUNTIME", "/opt/danus/runtime")) / "run/verify.pid"
-        if health.get("status") != "ok" or not pidfile.exists() or str(health.get("pid")) != pidfile.read_text().strip():
+        if (health.get("status") != "ok" or not pidfile.exists()
+                or str(health.get("pid")) != pidfile.read_text().strip()):
             raise BenchError("verifier health does not match this Danus deployment's PID file")
         version = subprocess.run([self.binary, "--version"], env=env, capture_output=True, text=True, timeout=30)
         return {"auth": "ChatGPT subscription", "codex": version.stdout.strip(),
@@ -302,7 +291,8 @@ class LiveBackend:
             save(schema_path, schema)
             args = codex_command(self.binary, model, effort, cwd, schema_path, output)
             save(directory / "command.json", args)
-            with (directory / "events.jsonl").open("w", encoding="utf-8") as out, (directory / "stderr.log").open("w", encoding="utf-8") as err:
+            with ((directory / "events.jsonl").open("w", encoding="utf-8") as out,
+                  (directory / "stderr.log").open("w", encoding="utf-8") as err):
                 proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=out, stderr=err,
                                         text=True, encoding="utf-8", env=self.env, cwd=cwd, start_new_session=True)
                 try:
@@ -321,7 +311,8 @@ class LiveBackend:
 
     def verify(self, solution, config):
         payload = {"statement": solution["claim"], "proof": solution["proof"]}
-        req = urllib.request.Request(config["verify_url"], data=canonical(payload).encode(), headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(config["verify_url"], data=canonical(payload).encode(),
+                                     headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=config["verify_timeout_seconds"]) as response:
                 data = json.load(response)

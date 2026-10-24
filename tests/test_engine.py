@@ -1,9 +1,9 @@
+from contextlib import redirect_stdout
 import copy
 import io
 from pathlib import Path
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 
 from danus_rsi import agents
 from danus_rsi.cli import main
@@ -109,7 +109,8 @@ class EngineTests(unittest.TestCase):
         content = Path(report["report"]).read_text(encoding="utf-8")
         self.assertIn("SCRIPTED DEMONSTRATION", content)
         from danus_rsi.report import write_report
-        files = write_report(self.store, report["run_id"], {"kind": "benchmark", "rows": [{"task_id": "<script>alert(1)</script>", "domain": "math", "decision": "error"}]})
+        rows = [{"task_id": "<script>alert(1)</script>", "domain": "math", "decision": "error"}]
+        files = write_report(self.store, report["run_id"], {"kind": "benchmark", "rows": rows})
         self.assertNotIn("<script>", Path(files["report"]).read_text(encoding="utf-8"))
 
 

@@ -14,6 +14,8 @@ if mode == "sleep":
 if mode == "exit":
     raise SystemExit(7)
 target = Path(args[args.index("--output-last-message") + 1])
-target.write_text("{broken" if mode == "malformed" else json.dumps({"answer": "fixture", "claim": "fixture", "proof": "fixture"}))
-print(json.dumps({"type": "item.completed", "item": {"type": "command_execution" if mode == "tool" else "agent_message", "text": "fixture"}}))
+answer = {"answer": "fixture", "claim": "fixture", "proof": "fixture"}
+target.write_text("{broken" if mode == "malformed" else json.dumps(answer))
+item = {"type": "command_execution" if mode == "tool" else "agent_message", "text": "fixture"}
+print(json.dumps({"type": "item.completed", "item": item}))
 print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 10, "output_tokens": 10}}))

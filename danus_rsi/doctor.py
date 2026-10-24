@@ -25,7 +25,8 @@ def _import_codex():
     return codex
 
 
-def diagnose(config, state_dir, env=None, platform=None, runner=subprocess.run, fetch=_fetch_json, importer=_import_codex):
+def diagnose(config, state_dir, env=None, platform=None, runner=subprocess.run, fetch=_fetch_json,
+             importer=_import_codex):
     env = dict(os.environ if env is None else env)
     platform = platform or sys.platform
     checks = []
@@ -42,7 +43,8 @@ def diagnose(config, state_dir, env=None, platform=None, runner=subprocess.run, 
     add("danus root", has_root, str(root), "set DANUS_ROOT to the Danus checkout that contains scripts/env.sh")
     add("danus environment", bool(env.get("DANUS_RUNTIME")), env.get("DANUS_RUNTIME", "DANUS_RUNTIME unset"),
         "start through scripts/run.sh, which sources the Danus scripts/env.sh")
-    add("subscription backend", env.get("CODEX_BACKEND") == "chatgpt", "CODEX_BACKEND=" + env.get("CODEX_BACKEND", "unset"),
+    add("subscription backend", env.get("CODEX_BACKEND") == "chatgpt",
+        "CODEX_BACKEND=" + env.get("CODEX_BACKEND", "unset"),
         "set CODEX_BACKEND=chatgpt in the Danus config/danus.env; this project never uses an API key")
 
     binary, run_env = None, env
@@ -58,7 +60,8 @@ def diagnose(config, state_dir, env=None, platform=None, runner=subprocess.run, 
     if binary and linux:
         try:
             login = runner([str(binary), "login", "status"], capture_output=True, text=True, timeout=30,
-                           env={k: v for k, v in run_env.items() if k not in ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN")})
+                           env={k: v for k, v in run_env.items()
+                                if k not in ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN")})
             text = (login.stdout + login.stderr).strip()
             add("codex login", login.returncode == 0 and "chatgpt" in text.lower(), text[:200] or "no output",
                 "sign in once in your own terminal: Danus.ps1 Login (or bin/codex login --device-auth)")
@@ -92,11 +95,12 @@ def diagnose(config, state_dir, env=None, platform=None, runner=subprocess.run, 
     add("state filesystem", not mounted, str(state), "use --state on the Linux filesystem, e.g. ~/danus-rsi-state; "
         "SQLite on a Windows mount is slow", required=False)
 
-    add("valency token", bool(env.get("VALENCY_TOKEN", "").strip()), "present" if env.get("VALENCY_TOKEN", "").strip() else "absent",
+    add("valency token", bool(env.get("VALENCY_TOKEN", "").strip()),
+        "present" if env.get("VALENCY_TOKEN", "").strip() else "absent",
         "only needed for --query/--refresh-literature; connector exports work without it", required=False)
     projects = Path(env.get("DANUS_AGENTS_ROOT") or root / "runtime" / "projects")
-    add("danus projects", projects.is_dir(), str(projects), "only needed for handoff: create a project with bin/danus new",
-        required=False)
+    add("danus projects", projects.is_dir(), str(projects),
+        "only needed for handoff: create a project with bin/danus new", required=False)
 
     return {"ready": all(c["ok"] for c in checks if c["required"]), "checks": checks,
             "note": "Read-only: no model calls were made and no service was started."}
