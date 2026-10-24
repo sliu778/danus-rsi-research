@@ -1,3 +1,4 @@
+from contextlib import redirect_stdout
 import io
 import json
 import os
@@ -5,7 +6,6 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 from unittest import mock
 
 from danus_rsi import agents, bridge
@@ -80,10 +80,13 @@ class EngineSamplingTests(unittest.TestCase):
     def test_feedback_withholds_defects_quoting_the_reference(self):
         task = load_suite()["tasks"][0]
         quoted = "The panel notes: " + " ".join(task["reference"].split()[:12])
-        judgment = {"status": "ok", "data": {"critical_errors": [quoted], "gaps": ["The bound in step 2 is not justified."]}}
+        judgment = {"status": "ok",
+                    "data": {"critical_errors": [quoted], "gaps": ["The bound in step 2 is not justified."]}}
         attempt = {"decision": "reject", "solution": {"status": "ok", "data": {"claim": "c"}},
-                   "panel": {"judgments": {"correctness": judgment, "adversarial": judgment}, "native": {"status": "error"}}}
-        feedback = solver_feedback(task, {"task_id": task["id"], "domain": task["domain"], "attempts": [attempt, attempt]})
+                   "panel": {"judgments": {"correctness": judgment, "adversarial": judgment},
+                             "native": {"status": "error"}}}
+        feedback = solver_feedback(task, {"task_id": task["id"], "domain": task["domain"],
+                                          "attempts": [attempt, attempt]})
         self.assertEqual(feedback["defects"], [REDACTED, "The bound in step 2 is not justified."])
         self.assertEqual(feedback["withheld_defects"], 4)
         self.assertEqual(feedback["decisions"], ["reject", "reject"])
@@ -115,7 +118,8 @@ class BridgePreflightTests(unittest.TestCase):
         def runner(command, **kwargs):
             calls.append(command[1])
             failed = command[1] == "status"
-            return subprocess.CompletedProcess(command, 1 if failed else 0, stdout="", stderr="no such worker" if failed else "")
+            return subprocess.CompletedProcess(command, 1 if failed else 0, stdout="",
+                                               stderr="no such worker" if failed else "")
         with self.assertRaisesRegex(ProtocolError, "not found or not readable"):
             bridge.assign(self.store, finding(self.store), "proj/ghost", self.root, confirm=True, runner=runner)
         self.assertEqual(calls, ["status"])

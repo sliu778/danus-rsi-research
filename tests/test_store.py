@@ -1,11 +1,10 @@
-import copy
 from concurrent.futures import ThreadPoolExecutor
-import json
+import copy
 import tempfile
 import unittest
 
 from danus_rsi.engine import BASELINE
-from danus_rsi.protocol import ProtocolError, canonical
+from danus_rsi.protocol import ProtocolError
 from danus_rsi.store import BudgetExceeded, Busy, Store
 from test_protocol import fixture_audit
 
@@ -100,7 +99,8 @@ class StoreTests(unittest.TestCase):
 
     def test_scripted_or_ineligible_evaluation_cannot_promote(self):
         for mode, eligible in (("scripted", True), ("live", False)):
-            value = {"mode": mode, "gate": {"eligible": eligible}, "baseline": self.policy, "candidate": self.policy, "code_hash": "abc"}
+            value = {"mode": mode, "gate": {"eligible": eligible}, "baseline": self.policy, "candidate": self.policy,
+                     "code_hash": "abc"}
             key = self.store.record_evaluation(mode + str(eligible), value)
             with self.assertRaisesRegex(ProtocolError, "eligible"):
                 self.store.promote(key, "abc")

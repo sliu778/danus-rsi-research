@@ -1,3 +1,4 @@
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -8,7 +9,6 @@ import threading
 import types
 import unittest
 from unittest.mock import patch
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from danus_rsi import transport
 from test_protocol import native
@@ -29,14 +29,17 @@ class TransportTests(unittest.TestCase):
         self.addCleanup(self.patch.stop)
 
     def test_command_restricts_tools_and_preserves_schema(self):
-        args = transport.codex_command(self.backend.binary, "gpt-6-astra", "xhigh", Path("/tmp"), Path("/tmp/schema"), Path("/tmp/output"))
-        for expected in ("read-only", "--ignore-user-config", "features.shell_tool=false", "features.apps=false", "features.plugins=false", "--output-schema"):
+        args = transport.codex_command(self.backend.binary, "gpt-6-astra", "xhigh", Path("/tmp"), Path("/tmp/schema"),
+                                       Path("/tmp/output"))
+        for expected in ("read-only", "--ignore-user-config", "features.shell_tool=false", "features.apps=false",
+                         "features.plugins=false", "--output-schema"):
             self.assertIn(expected, args)
         self.assertNotIn("--dangerously-bypass-approvals-and-sandbox", args)
 
     def test_subscription_preflight_rejects_api_login_and_removes_keys(self):
         result = subprocess.CompletedProcess([], 0, "Logged in using an API key", "")
-        with patch.dict(os.environ, {"CODEX_BACKEND": "chatgpt", "OPENAI_API_KEY": "fixture-secret"}), patch("danus_rsi.transport.subprocess.run", return_value=result) as run:
+        with (patch.dict(os.environ, {"CODEX_BACKEND": "chatgpt", "OPENAI_API_KEY": "fixture-secret"}),
+              patch("danus_rsi.transport.subprocess.run", return_value=result) as run):
             with self.assertRaises(transport.BenchError):
                 self.backend.preflight({})
             self.assertNotIn("OPENAI_API_KEY", run.call_args.kwargs["env"])
@@ -44,7 +47,8 @@ class TransportTests(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith("linux"), "live subprocess transport is Linux/WSL only")
     def test_cli_success_and_invalid_outputs(self):
         with tempfile.TemporaryDirectory() as tmp:
-            data, usage = self.backend.generate("fixture", transport.SOLUTION_SCHEMA, "gpt-6-astra", "xhigh", Path(tmp), 5)
+            data, usage = self.backend.generate("fixture", transport.SOLUTION_SCHEMA, "gpt-6-astra", "xhigh",
+                                                Path(tmp), 5)
             self.assertEqual(data["answer"], "fixture")
             self.assertEqual(usage["input_tokens"], 10)
         for mode in ("malformed", "tool", "exit"):

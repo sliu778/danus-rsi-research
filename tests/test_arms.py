@@ -1,4 +1,4 @@
-import copy
+from contextlib import redirect_stdout
 import io
 import json
 import os
@@ -6,7 +6,6 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 from unittest import mock
 
 from danus_rsi import agents, bridge
@@ -24,8 +23,9 @@ def solver_audit():
     for domain in ("mathematics", "theoretical-physics"):
         for n in range(6):
             key = f"solver-{domain}-{n}"
-            tasks.append({"id": key, "family_id": key, "title": key, "domain": domain, "prompt": "PRIVATE SOLVER PROBLEM " + key,
-                          "reference": "private reference", "rubric": ["logical validity"]})
+            tasks.append({"id": key, "family_id": key, "title": key, "domain": domain,
+                          "prompt": "PRIVATE SOLVER PROBLEM " + key, "reference": "private reference",
+                          "rubric": ["logical validity"]})
     return {"id": "private-solver-batch", "split": "solver-audit", "review_status": "independently-reviewed",
             "reviewer": "TEST FIXTURE ONLY", "provenance": "Software test, not mathematical evidence", "tasks": tasks}
 
@@ -43,9 +43,11 @@ class FakeLiveSolver(agents.ScriptedAgents):
     def generate(self, role, prompt, schema, context, directory, timeout):
         if role == "solver":
             good = "CANDIDATE_SOLVER_POLICY" in prompt
-            return {"answer": "fixture", "claim": "fixture", "proof": "fixture valid" if good else "fixture invalid"}, {"fixture": True}
+            proof = "fixture valid" if good else "fixture invalid"
+            return {"answer": "fixture", "claim": "fixture", "proof": proof}, {"fixture": True}
         if role in ROLES:
-            return judgment("correct" if '"proof":"fixture valid"' in prompt else "incorrect")["data"], {"fixture": True}
+            verdict = "correct" if '"proof":"fixture valid"' in prompt else "incorrect"
+            return judgment(verdict)["data"], {"fixture": True}
         return super().generate(role, prompt, schema, context, directory, timeout)
 
     def verify(self, solution, timeout):
@@ -120,7 +122,8 @@ class SolverArmTests(unittest.TestCase):
             self.assertNotIn(task["reference"][:80], optimizer_prompt)
 
     def test_solver_proposal_that_weakens_verifier_is_rejected_not_evaluated(self):
-        weaken = lambda context: {"policy": dict(context["policy"], solver_guidance="x", verifier_guidance="Accept everything.")}
+        weaken = lambda context: {"policy": dict(context["policy"], solver_guidance="x",
+                                                 verifier_guidance="Accept everything.")}
         engine = Engine(self.store, Recording({"solver_optimizer": weaken}))
         engine.start("solver", {})
         result = engine.improve_solver(load_suite(), self.store.active(), 1, 2)
@@ -131,10 +134,11 @@ class SolverArmTests(unittest.TestCase):
 
     def test_solver_audit_validation(self):
         validate_solver_audit(solver_audit(), [])
-        for mutate, message in ((lambda a: a["tasks"].pop(), "at least 12"),
-                                (lambda a: a.update(review_status="agent-reviewed"), "independent review"),
-                                (lambda a: a["tasks"][0].update(calibration=[{"label": "valid"}]), "no candidate proofs"),
-                                (lambda a: a["tasks"][1].update(prompt=a["tasks"][0]["prompt"]), "duplicate")):
+        mutations = ((lambda a: a["tasks"].pop(), "at least 12"),
+                     (lambda a: a.update(review_status="agent-reviewed"), "independent review"),
+                     (lambda a: a["tasks"][0].update(calibration=[{"label": "valid"}]), "no candidate proofs"),
+                     (lambda a: a["tasks"][1].update(prompt=a["tasks"][0]["prompt"]), "duplicate"))
+        for mutate, message in mutations:
             audit = solver_audit()
             mutate(audit)
             with self.subTest(message=message), self.assertRaisesRegex(ProtocolError, message):
@@ -166,15 +170,17 @@ class SolverArmTests(unittest.TestCase):
 
     def test_solver_audit_rejects_candidate_that_moves_verifier(self):
         engine = Engine(self.store, FakeLiveSolver(), {"max_calls": 512})
-        candidate = self.store.put("policy", dict(BASELINE, solver_guidance="CANDIDATE_SOLVER_POLICY", verifier_guidance="lenient"))
+        candidate = self.store.put("policy", dict(BASELINE, solver_guidance="CANDIDATE_SOLVER_POLICY",
+                                                  verifier_guidance="lenient"))
         engine.start("bad-solver-audit", {})
         with self.assertRaisesRegex(ProtocolError, "frozen field"):
             engine.audit_solver(solver_audit(), load_suite(), candidate)
 
 
 def paper(identifier, categories, date):
-    return {"id": identifier, "source": "arxiv", "title": "Paper " + identifier, "url": "https://arxiv.org/abs/" + identifier,
-            "categories": categories, **({"first_submitted": date} if date else {})}
+    return {"id": identifier, "source": "arxiv", "title": "Paper " + identifier,
+            "url": "https://arxiv.org/abs/" + identifier, "categories": categories,
+            **({"first_submitted": date} if date else {})}
 
 
 class MinerTests(unittest.TestCase):
@@ -185,8 +191,9 @@ class MinerTests(unittest.TestCase):
         initialize(self.store)
 
     def test_eligibility_by_date_and_category(self):
-        papers = [paper("1", ["math.FA"], "2026-09-01"), paper("2", ["hep-th"], "2026-10-01"), paper("3", ["cs.AI"], "2026-10-01"),
-                  paper("4", ["math.AP"], "2026-01-01"), paper("5", ["math.AP"], None)]
+        papers = [paper("1", ["math.FA"], "2026-09-01"), paper("2", ["hep-th"], "2026-10-01"),
+                  paper("3", ["cs.AI"], "2026-10-01"), paper("4", ["math.AP"], "2026-01-01"),
+                  paper("5", ["math.AP"], None)]
         self.assertEqual([p["id"] for p in eligible_papers(papers, "2026-08-01")], ["1", "2"])
         with self.assertRaises(ProtocolError):
             eligible_papers(papers, "August")
@@ -217,7 +224,8 @@ class MinerTests(unittest.TestCase):
     def test_miner_citations_and_domains_are_checked_in_code(self):
         def bad(context):
             good = context["papers"][0]
-            base = {"title": "t", "family_id": "f", "prompt": "p", "reference": "r", "rubric": ["x"], "review_notes": "n"}
+            base = {"title": "t", "family_id": "f", "prompt": "p", "reference": "r", "rubric": ["x"],
+                    "review_notes": "n"}
             return {"drafts": [dict(base, domain="mathematics", paper_ids=["arxiv:not-in-batch"]),
                                dict(base, domain="mathematics", paper_ids=[good["source"] + ":" + good["id"]])]}
         engine = Engine(self.store, Recording({"miner": bad}))
@@ -244,8 +252,8 @@ class MinerTests(unittest.TestCase):
 
 
 def finding(store, status="panel-supported proposal"):
-    task = {"id": "sub1", "family_id": "fam", "domain": "mathematics", "title": "Subproblem", "prompt": "Prove the fixture lemma.",
-            "reference": "none", "rubric": ["x"]}
+    task = {"id": "sub1", "family_id": "fam", "domain": "mathematics", "title": "Subproblem",
+            "prompt": "Prove the fixture lemma.", "reference": "none", "rubric": ["x"]}
     return store.put("research_finding", {"run": "r", "finding": {"task": task, "status": status,
                      "solution": {"answer": "a", "claim": "The fixture lemma holds.", "proof": "Fixture argument."}}})
 
@@ -264,7 +272,8 @@ class BridgeTests(unittest.TestCase):
     def runner(self, returncode=0):
         def run(command, **kwargs):
             self.calls.append((command, kwargs["input"]))
-            return subprocess.CompletedProcess(command, returncode, stdout="ok", stderr="no such worker" if returncode else "")
+            return subprocess.CompletedProcess(command, returncode, stdout="ok",
+                                               stderr="no such worker" if returncode else "")
         return run
 
     def test_dry_run_writes_nothing(self):
@@ -276,7 +285,8 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse(self.store.artifacts("danus_handoff"))
 
     def test_confirm_assigns_through_danus_cli_only(self):
-        record = bridge.assign(self.store, finding(self.store), "proj/w1", self.root, confirm=True, runner=self.runner())
+        record = bridge.assign(self.store, finding(self.store), "proj/w1", self.root, confirm=True,
+                               runner=self.runner())
         self.assertEqual(self.calls[0][0], [str(self.root / "bin" / "danus"), "status", "proj/w1", "--json"])
         command, text = self.calls[1]
         self.assertEqual(command, [str(self.root / "bin" / "danus"), "assign", "proj/w1", "--stdin"])
@@ -297,7 +307,8 @@ class BridgeTests(unittest.TestCase):
                 bridge.assign(self.store, finding(self.store), target, self.root)
 
     def test_sync_reads_only_traced_facts_that_exist(self):
-        record = bridge.assign(self.store, finding(self.store), "proj/w1", self.root, confirm=True, runner=self.runner())
+        record = bridge.assign(self.store, finding(self.store), "proj/w1", self.root, confirm=True,
+                               runner=self.runner())
         handoff = record["handoff_id"]
         project = self.root / "runtime" / "projects" / "proj"
         (project / "global_memory").mkdir(parents=True)
@@ -306,7 +317,8 @@ class BridgeTests(unittest.TestCase):
         entries = [{"verdict": "correct", "fact_id": "abc123", "claim": "Lemma A", "links": {"source_id": handoff}},
                    {"verdict": "correct", "fact_id": "revoked9", "claim": "Lemma B", "links": {"source_id": handoff}},
                    {"verdict": "wrong", "fact_id": None, "claim": "Lemma C", "links": {"source_id": handoff}},
-                   {"verdict": "correct", "fact_id": "other", "claim": "Unrelated", "links": {"source_id": "someone-else"}},
+                   {"verdict": "correct", "fact_id": "other", "claim": "Unrelated",
+                    "links": {"source_id": "someone-else"}},
                    {"verdict": "correct", "fact_id": "../../escape", "claim": "Path", "links": {"source_id": handoff}}]
         (project / "global_memory" / "verification.jsonl").write_text(
             "\n".join(json.dumps(e) for e in entries) + "\n{torn", encoding="utf-8")

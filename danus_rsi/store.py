@@ -41,7 +41,8 @@ class Store:
                 CREATE TABLE IF NOT EXISTS audit_batches(id TEXT PRIMARY KEY, fingerprint TEXT UNIQUE NOT NULL,
                     run_id TEXT UNIQUE NOT NULL, reserved_at REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS audit_cases(fingerprint TEXT PRIMARY KEY, batch_id TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS evaluations(id TEXT PRIMARY KEY, run_id TEXT NOT NULL UNIQUE, body TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS evaluations(id TEXT PRIMARY KEY, run_id TEXT NOT NULL UNIQUE,
+                    body TEXT NOT NULL);
             """)
             version = db.execute("SELECT body FROM meta WHERE key='schema_version'").fetchone()
             require(version is None or json.loads(version[0]) == 1, "unsupported database schema")
@@ -157,7 +158,8 @@ class Store:
     def finish(self, run_id, key, token, result):
         state = "done" if result["status"] == "ok" else "error"
         with self.transaction() as db:
-            updated = db.execute("UPDATE jobs SET status=?,result=?,token=NULL,lease_until=NULL WHERE run_id=? AND key=? AND token=?",
+            updated = db.execute("UPDATE jobs SET status=?,result=?,token=NULL,lease_until=NULL "
+                                 "WHERE run_id=? AND key=? AND token=?",
                                  (state, canonical(result), run_id, key, token))
             require(updated.rowcount == 1, "stale worker result rejected")
             self._event(db, "call_finished", {"run": run_id, "key": key, "status": state, "result": digest(result)})
@@ -189,8 +191,10 @@ class Store:
         """Read-only: has this batch, or any of its problems, already been consumed?"""
         keys = self.audit_keys(audit)
         with self.connect() as db:
-            batch = db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?", (audit.get("id"), digest(audit))).fetchone()
-            consumed = sum(db.execute("SELECT 1 FROM audit_cases WHERE fingerprint=?", (k,)).fetchone() is not None for k in keys)
+            batch = db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?",
+                               (audit.get("id"), digest(audit))).fetchone()
+            consumed = sum(db.execute("SELECT 1 FROM audit_cases WHERE fingerprint=?", (k,)).fetchone() is not None
+                           for k in keys)
         return {"batch_consumed": batch is not None, "consumed_problem_keys": consumed}
 
     def reserve_audit(self, audit, run_id):
@@ -198,7 +202,8 @@ class Store:
         fingerprint = digest(audit)
         keys = self.audit_keys(audit)
         with self.transaction() as db:
-            require(db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?", (audit["id"], fingerprint)).fetchone() is None,
+            require(db.execute("SELECT 1 FROM audit_batches WHERE id=? OR fingerprint=?",
+                               (audit["id"], fingerprint)).fetchone() is None,
                     "audit batch already consumed; use a fresh batch")
             for key in keys:
                 require(db.execute("SELECT 1 FROM audit_cases WHERE fingerprint=?", (key,)).fetchone() is None,
@@ -223,18 +228,21 @@ class Store:
             require(digest(value) == evaluation_id, "evaluation integrity failure")
             require(value["mode"] == "live" and value["gate"]["eligible"], "evaluation is not promotion eligible")
             require(value["code_hash"] == code_hash, "evaluator code changed; obtain a fresh audit")
-            require(suite_hash is not None and value["regression_suite"] == suite_hash, "regression suite changed; obtain a fresh audit")
+            require(suite_hash is not None and value["regression_suite"] == suite_hash,
+                    "regression suite changed; obtain a fresh audit")
             active = json.loads(db.execute("SELECT body FROM meta WHERE key='active_policy'").fetchone()[0])
             require(active == value["baseline"], "active policy changed since the audit")
             require(db.execute("SELECT 1 FROM audit_batches WHERE run_id=?", (row["run_id"],)).fetchone() is not None,
                     "missing audit reservation")
             db.execute("UPDATE meta SET body=? WHERE key='active_policy'", (canonical(value["candidate"]),))
-            self._event(db, "policy_promoted", {"previous": active, "policy": value["candidate"], "evaluation": evaluation_id})
+            self._event(db, "policy_promoted",
+                        {"previous": active, "policy": value["candidate"], "evaluation": evaluation_id})
 
     def rollback(self, target):
         self.get(target, "policy")
         with self.transaction() as db:
-            history = [json.loads(r[0]) for r in db.execute("SELECT body FROM events WHERE kind IN ('policy_initialized','policy_promoted')")]
+            history = [json.loads(r[0]) for r in db.execute(
+                "SELECT body FROM events WHERE kind IN ('policy_initialized','policy_promoted')")]
             require(any(r["policy"] == target for r in history), "rollback target was never an active policy")
             db.execute("UPDATE meta SET body=? WHERE key='active_policy'", (canonical(target),))
             self._event(db, "policy_rollback", {"policy": target})
@@ -244,7 +252,8 @@ class Store:
         with self.connect() as db:
             for row in db.execute("SELECT * FROM events ORDER BY seq"):
                 require(row["previous"] == previous, "broken event chain")
-                expected = digest({"at": row["at"], "kind": row["kind"], "body": json.loads(row["body"]), "previous": previous})
+                expected = digest({"at": row["at"], "kind": row["kind"], "body": json.loads(row["body"]),
+                                   "previous": previous})
                 require(expected == row["hash"], "event integrity failure")
                 previous = expected
         return previous

@@ -17,7 +17,8 @@ class PlaceholderConcernTests(unittest.TestCase):
 
     def test_anything_else_is_still_a_concern(self):
         for text in ("The reference omits the finiteness hypothesis.", "None, but step 2 of the reference is wrong.",
-                     "None; the reference uses the opposite sign convention.", "No. The reference assumes compactness twice.",
+                     "None; the reference uses the opposite sign convention.",
+                     "No. The reference assumes compactness twice.",
                      "Nonexistent eigenvector in the reference"):
             with self.subTest(text=text):
                 self.assertTrue(transport.has_reference_concern(text))

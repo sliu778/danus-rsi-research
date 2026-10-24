@@ -4,8 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import re
 from pathlib import Path
+import re
 
 DATA = Path(__file__).parent / "data"
 DOMAINS = {"mathematics", "theoretical-physics"}
@@ -54,11 +54,13 @@ def statement_key(prompt):
 
 
 def validate_policy(value):
-    require(set(value) == {"name", "solver_guidance", "verifier_guidance", "curriculum_domains", "rationale"}, "policy fields differ from allowed strategy fields")
+    require(set(value) == {"name", "solver_guidance", "verifier_guidance", "curriculum_domains", "rationale"},
+            "policy fields differ from allowed strategy fields")
     for key in ("name", "solver_guidance", "verifier_guidance", "rationale"):
         text(value[key], key, 12000)
-    require(isinstance(value["curriculum_domains"], list) and 0 < len(value["curriculum_domains"]) <= 2, "invalid curriculum")
-    require(set(value["curriculum_domains"]) <= DOMAINS and len(set(value["curriculum_domains"])) == len(value["curriculum_domains"]), "invalid curriculum domains")
+    domains = value["curriculum_domains"]
+    require(isinstance(domains, list) and 0 < len(domains) <= 2, "invalid curriculum")
+    require(set(domains) <= DOMAINS and len(set(domains)) == len(domains), "invalid curriculum domains")
     return value
 
 
@@ -66,8 +68,8 @@ def require_arm_change(arm, parent, candidate):
     """An arm may revise only its own strategy text; the other side stays frozen."""
     require(arm in ARM_FIELDS, "unknown improvement arm")
     frozen = set(parent) - ARM_FIELDS[arm]
-    require(all(candidate[field] == parent[field] for field in frozen),
-            f"{arm} optimizer changed a frozen field: " + ", ".join(sorted(f for f in frozen if candidate[f] != parent[f])))
+    changed = sorted(field for field in frozen if candidate[field] != parent[field])
+    require(not changed, f"{arm} optimizer changed a frozen field: " + ", ".join(changed))
     return candidate
 
 
@@ -189,7 +191,8 @@ def validate_solver_audit(audit, exposed_tasks):
         families.add(task["family_id"])
         per_domain[task["domain"]] = per_domain.get(task["domain"], 0) + 1
     require(len(families) >= 8, "solver audit requires at least 8 distinct families")
-    require(all(per_domain.get(d, 0) >= 5 for d in DOMAINS), "solver audit requires at least five problems in each domain")
+    require(all(per_domain.get(d, 0) >= 5 for d in DOMAINS),
+            "solver audit requires at least five problems in each domain")
     return audit
 
 
